@@ -1,17 +1,44 @@
 cmake_minimum_required(VERSION 3.12)
 
 # set the project name
-project(EI_Himax)
-
+project(edge-impulse-standalone-himax)
 
 # Toolchain
 set(CMAKE_C_COMPILER ccac)
 set(CMAKE_CXX_COMPILER ccac)
 set(CMAKE_CROSSCOMPILING 1)
 
+# add the sources
+file(GLOB EI_SDK "edge-impulse-sdk/porting/himax/*.cpp")
+
+file(GLOB TF "edge-impulse-sdk/tensorflow/lite/micro/*.cc"
+			"edge-impulse-sdk/tensorflow/lite/micro/memory_planner/*.cc"
+            "tflite-model/*.cpp"
+			"edge-impulse-sdk/tensorflow/lite/micro/kernels/*.cc"
+			"edge-impulse-sdk/tensorflow/lite/core/api/*.cc"
+			"edge-impulse-sdk/tensorflow/lite/c/*.c"
+			"edge-impulse-sdk/tensorflow/lite/kernels/internal/*.cc"
+            "edge-impulse-sdk/tensorflow/lite/kernels/*.cc")
+
+file(GLOB DSP "edge-impulse-sdk/dsp/kissfft/*.cpp"
+			"edge-impulse-sdk/dsp/dct/*.cpp")
+
+set(SOURCE_FILES ${EI_SDK} ${TF} ${DSP})
+
+# include directories
+include_directories(./)
+include_directories(edge-impulse-sdk/)
+include_directories(edge-impulse-sdk/classifier)
+include_directories(edge-impulse-sdk/porting)
+include_directories(edge-impulse-sdk/dsp)
+include_directories(edge-impulse-sdk/dsp/kissfft)
+include_directories(edge-impulse-sdk/dsp/dct)
+include_directories(edge-impulse-sdk/third_party/flatbuffers/include/)
+include_directories(edge-impulse-sdk/third_party/gemmlowp)
+include_directories(edge-impulse-sdk/third_party/ruy)
 
 # add the executable
-add_executable(${PROJECT_NAME}.elf main.cc)
+add_executable(${PROJECT_NAME}.elf main.cc ${SOURCE_FILES})
 
 
 set(CMAKE_C_FLAGS "\
@@ -41,13 +68,7 @@ set(CMAKE_C_FLAGS "\
 -ffunction-sections \
 -fdata-sections \
 -tcf_core_config \
--I. \
--I./third_party/gemmlowp \
--I./third_party/flatbuffers/include \
--I./third_party/ruy \
--I./third_party/arc_mli_package/include \
--I./third_party/arc_mli_package/include/api \
--I./tensorflow/lite/micro/tools/make/downloads/kissfft")
+-DEIDSP_QUANTIZE_FILTERBANK=0")
 
 set(CMAKE_CXX_FLAGS "\
 -DTF_LITE_STATIC_MEMORY \
@@ -66,13 +87,7 @@ set(CMAKE_CXX_FLAGS "\
 -ffunction-sections \
 -fdata-sections \
 -tcf_core_config \
--I. \
--I./third_party/gemmlowp \
--I./third_party/flatbuffers/include \
--I./third_party/ruy \
--I./third_party/arc_mli_package/include \
--I./third_party/arc_mli_package/include/api \
--I./tensorflow/lite/micro/tools/make/downloads/kissfft")
+-DEIDSP_QUANTIZE_FILTERBANK=0")
 
 
 set(CMAKE_EXE_LINKER_FLAGS_INIT "${LINKER_FLAGS}")
