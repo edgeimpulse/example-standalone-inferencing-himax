@@ -270,7 +270,7 @@ __attribute__((unused)) int extract_mfcc_features(signal_t *signal, matrix_t *ou
     signal_t preemphasized_audio_signal;
     preemphasized_audio_signal.total_length = signal->total_length;
     preemphasized_audio_signal.get_data = &preemphasized_audio_signal_get_data;
-ei_printf("-3\r\n");
+
     // calculate the size of the MFCC matrix
     matrix_size_t out_matrix_size =
         speechpy::feature::calculate_mfcc_buffer_size(
@@ -281,7 +281,7 @@ ei_printf("-3\r\n");
         ei_printf("calculated size = %hux%hu\n", out_matrix_size.rows, out_matrix_size.cols);
         EIDSP_ERR(EIDSP_MATRIX_SIZE_MISMATCH);
     }
-ei_printf("-4\r\n");
+
     output_matrix->rows = out_matrix_size.rows;
     output_matrix->cols = out_matrix_size.cols;
 
@@ -293,14 +293,14 @@ ei_printf("-4\r\n");
         ei_printf("ERR: MFCC failed (%d)\n", ret);
         EIDSP_ERR(ret);
     }
-ei_printf("-5\r\n");
+
     // cepstral mean and variance normalization
     ret = speechpy::processing::cmvnw(output_matrix, config.win_size, true);
     if (ret != EIDSP_OK) {
         ei_printf("ERR: cmvnw failed (%d)\n", ret);
         EIDSP_ERR(ret);
     }
-ei_printf("-6\r\n");
+
     output_matrix->cols = out_matrix_size.rows * out_matrix_size.cols;
     output_matrix->rows = 1;
 

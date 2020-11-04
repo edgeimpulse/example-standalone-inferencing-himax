@@ -666,7 +666,7 @@ extern "C" EI_IMPULSE_ERROR run_classifier(
     ei::matrix_t features_matrix(1, EI_CLASSIFIER_NN_INPUT_FRAME_SIZE);
 
     uint64_t dsp_start_ms = ei_read_timer_ms();
-ei_printf("1\r\n");
+
     size_t out_features_index = 0;
 
     for (size_t ix = 0; ix < ei_dsp_blocks_size; ix++) {
@@ -678,7 +678,7 @@ ei_printf("1\r\n");
         }
 
         ei::matrix_t fm(1, block.n_output_features, features_matrix.buffer + out_features_index);
-ei_printf("2\r\n");
+
         int ret = block.extract_fn(signal, &fm, block.config);
         if (ret != EIDSP_OK) {
             ei_printf("ERR: Failed to run DSP process (%d)\n", ret);

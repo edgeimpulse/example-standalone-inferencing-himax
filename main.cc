@@ -45,9 +45,6 @@ int main(void)
 	hx_drv_uart_initial();
 	hx_drv_tick_start();
 
-	ei_printf("Whats the tick: %d\r\n", ei_read_timer_ms());
-	ei_printf_float(23.544f);
-
     while (1) {
         ei_printf("Edge Impulse standalone inferencing HiMax WE1 EVB\n");
 

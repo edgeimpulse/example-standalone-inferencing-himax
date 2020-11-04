@@ -204,7 +204,7 @@ public:
 
         stack_frames_info_t stack_frame_info = { 0 };
         stack_frame_info.signal = signal;
-ei_printf("#1\r\n");
+
         ret = processing::stack_frames(
             &stack_frame_info,
             sampling_frequency,
@@ -233,7 +233,7 @@ ei_printf("#1\r\n");
         }
 
         uint16_t coefficients = fft_length / 2 + 1;
-ei_printf("#2\r\n");
+
         // calculate the filterbanks first... preferably I would want to do the matrix multiplications
         // whenever they happen, but OK...
 #if EIDSP_QUANTIZE_FILTERBANK
@@ -244,13 +244,13 @@ ei_printf("#2\r\n");
         if (!filterbanks.buffer) {
             EIDSP_ERR(EIDSP_OUT_OF_MEM);
         }
-ei_printf("#3\r\n");
+
         ret = feature::filterbanks(
             &filterbanks, num_filters, coefficients, sampling_frequency, low_frequency, high_frequency, true);
         if (ret != 0) {
             EIDSP_ERR(ret);
         }
-ei_printf("#4\r\n");
+
         for (size_t ix = 0; ix < stack_frame_info.frame_ixs->size(); ix++) {
             size_t power_spectrum_frame_size = (fft_length / 2 + 1);
 
@@ -286,7 +286,7 @@ ei_printf("#4\r\n");
                 power_spectrum_frame_size,
                 fft_length
             );
-ei_printf("#5\r\n");
+
             if (ret != 0) {
                 EIDSP_ERR(ret);
             }
@@ -306,7 +306,7 @@ ei_printf("#5\r\n");
                 &filterbanks,
                 out_features
             );
-ei_printf("#6\r\n");
+
             if (ret != 0) {
                 EIDSP_ERR(ret);
             }
@@ -400,27 +400,27 @@ ei_printf("#6\r\n");
         if (!energy_matrix.buffer) {
             EIDSP_ERR(EIDSP_OUT_OF_MEM);
         }
-ei_printf("+1\r\n");
+
         ret = mfe(&features_matrix, &energy_matrix, signal,
             sampling_frequency, frame_length, frame_stride, num_filters, fft_length,
             low_frequency, high_frequency);
         if (ret != EIDSP_OK) {
             EIDSP_ERR(ret);
         }
-ei_printf("+2\r\n");
+
         // ok... now we need to calculate the MFCC from this...
         // first do log() over all features...
         ret = numpy::log(&features_matrix);
         if (ret != EIDSP_OK) {
             EIDSP_ERR(ret);
         }
-ei_printf("+3\r\n");
+
         // now do DST type 2
         ret = numpy::dct2(&features_matrix, DCT_NORMALIZATION_ORTHO);
         if (ret != EIDSP_OK) {
             EIDSP_ERR(ret);
         }
-ei_printf("+4\r\n");
+
         // replace first cepstral coefficient with log of frame energy for DC elimination
         if (dc_elimination) {
             for (size_t row = 0; row < features_matrix.rows; row++) {
