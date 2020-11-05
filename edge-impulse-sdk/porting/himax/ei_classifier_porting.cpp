@@ -42,7 +42,7 @@ __attribute__((weak)) EI_IMPULSE_ERROR ei_sleep(int32_t time_ms) {
 
 uint64_t ei_read_timer_ms()
 {
-    int32_t tick;
+    uint32_t tick;
     hx_drv_tick_get(&tick);
     return (uint64_t)tick;
 }

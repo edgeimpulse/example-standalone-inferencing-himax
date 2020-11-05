@@ -100,6 +100,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${LINKER_FLAGS} \
 ../memory.lcf \
 -Hldopt=-Bgrouplib \
 ../libembarc.a \
+../libbss.a \
 ../arc_mli_package/bin/himax_arcem9d_r16/release/libmli.a ")
 
 

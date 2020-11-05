@@ -53,10 +53,17 @@ typedef enum {
 } HX_DRV_LED_ONOFF_E;
 
 typedef enum {
-	SPI_TYPE_JPG               = 0x01,
-	SPI_TYPE_RAW               = 0x02,
-	SPI_TYPE_META_DATA         = 0x03,
+	SPI_TYPE_JPG               = 0x01,    /**< transfer data type is JPEG image */
+	SPI_TYPE_RAW               = 0x02,    /**< transfer data type is RAW image  */
+	SPI_TYPE_META_DATA         = 0x03,    /**< transfer data type is meta-data  */
+	SPI_TYPE_PDM     	 	   = 0x04,    /**< transfer data type is audio PDM data  */
 }HX_DRV_SPI_TYPE;
+
+typedef enum {
+	SHARE_MODE_SPIM            = 0x01,    /**< switch share pin to spi master mode */
+	SHARE_MODE_I2CM            = 0x02,    /**< switch share pin to i2c master mode */
+}HX_DRV_SHARE_MODE;
+
 /****************************************************
  * Structure Definition                             *
  ***************************************************/
@@ -118,14 +125,14 @@ extern HX_DRV_ERROR_E hx_drv_lib_version(uint32_t *major_ver, uint32_t *minor_ve
  *          Current image sensor use for himax_we1_evb is HM0360, image resolution is 640x480.
  *
  * \param[out] pimg_config		Img_width, img_height, jpeg_address, raw_address will be assigned by driver after initial success
- * \param[in] tp_enable			test pattern enable
  * \retval	HX_DRV_LIB_PASS		Initial success
  * \retval	HX_DRV_LIB_FAIL		Initial fail
  */
-extern HX_DRV_ERROR_E hx_drv_sensor_initial(hx_drv_sensor_image_config_t *pimg_config, uint8_t tp_enable);
+extern HX_DRV_ERROR_E hx_drv_sensor_initial(hx_drv_sensor_image_config_t *pimg_config);
 
 /**
  * \brief	Image sensor capture, it will capture one frame and return the frame information.
+ * 			both RAW image and JPEG image will be provided.
  *
  * \param[out] pimg_config		Jpeg_size, raw_size of the captured frame will be given after capture success
  * \retval	HX_DRV_LIB_PASS		Capture one frame success
@@ -142,7 +149,7 @@ extern HX_DRV_ERROR_E hx_drv_sensor_capture(hx_drv_sensor_image_config_t *pimg_c
 extern HX_DRV_ERROR_E hx_drv_sensor_stop_capture();
 
 /**
- * \brief	Image sensor start streaming, it often use after stream off and want to start streaming.
+ * \brief	Image sensor start streaming, it often use after stream off and want to re-start streaming.
  *
  * \retval	HX_DRV_LIB_PASS		Start streaming success
  * \retval	HX_DRV_LIB_FAIL		Start streaming fail
@@ -209,9 +216,12 @@ extern uint8_t hx_drv_accelerometer_available_count();
 extern HX_DRV_ERROR_E hx_drv_mic_initial();
 
 /**
- * \brief	Capture data from Microphone. Each sample for mono PDM is 16bits. Data size will be 32 bytes for each millisecond audio sound storage.
+ * \brief	Capture Single channel audio data from Microphone. Each sample for mono PDM is 16bits little-endian signed data.
+ *          During each millisecond, there will be 16 samples(32 bytes) of audio data storage to target address.
+ * 			This API is provided for TFLM micro_speech example, which includes some previous audio data for sliding window usage.
+ * 			Please use API "hx_drv_mic_capture_dual" for normal case.
  *
- * \param[out] pmic_config		Received data will be assigned by driver with address and size count about how many samples
+ * \param[out] pmic_config		Received data will be assigned by driver with address and size count in bytes about samples.
  * \retval	HX_DRV_LIB_PASS		Capture success
  * \retval	HX_DRV_LIB_FAIL		Capture fail
  */
@@ -243,14 +253,17 @@ extern HX_DRV_ERROR_E hx_drv_mic_on();
 extern HX_DRV_ERROR_E hx_drv_mic_off();
 
 /**
- * \brief	Get Dual microphone data
+ * \brief	Capture Dual channel audio data from Microphone. Each sample for dual PDM are 32 bits, includes Left channel 16bits little-endian signed data
+ * 			and right channel 16bits little-endian signed data.
+ *          During each millisecond, there will be 16 samples(64 bytes) of audio data storage to target address.
+ *          This API often called when get changes by API "hx_drv_mic_timestamp_get"
  *
- * \param[out] aud_addr			audio address for data captured
- * \param[out] size				audio data size for data captured
+ * \param[out] pmic_config		Received data will be assigned by driver with address and size count in bytes about samples. For example,
+ * 								if data_size is 6400, that means 1600 samples(100ms) of audio data in address.
  * \retval	HX_DRV_LIB_PASS		Operation success
  * \retval	HX_DRV_LIB_FAIL		Operation fail
  */
-extern HX_DRV_ERROR_E hx_drv_mic_capture_dual(uint32_t *aud_addr, uint32_t *size);
+extern HX_DRV_ERROR_E hx_drv_mic_capture_dual(hx_drv_mic_data_config_t *pmic_config);
 /**
  * \brief	UART initialization, default speed is 115200 bps. This is for message output.
  *
@@ -342,7 +355,7 @@ extern HX_DRV_ERROR_E hx_drv_tick_get(uint32_t *tick);
 /**
  * \brief	I2c master control. use to set i2c with target ID, target address with data
  *
- * \param[in] slave_addr_sft	target ID offset
+ * \param[in] slave_addr_sft	target device ID represent in 7-bits mode
  * \param[in] addr				target address to set data
  * \param[in] addr_len			target address size in bytes
  * \param[in] data				data array pointer
@@ -355,7 +368,7 @@ extern HX_DRV_ERROR_E hx_drv_i2cm_set_data(uint8_t slave_addr_sft, uint8_t *addr
 /**
  * \brief	I2c master control. use to read i2c data with target ID
  *
- * \param[in] slave_addr_sft	target ID offset
+ * \param[in] slave_addr_sft	target device ID represent in 7-bits mode
  * \param[in] addr				target address to read data
  * \param[in] addr_len			target address size in bytes
  * \param[out] data				data array pointer
@@ -383,6 +396,16 @@ extern HX_DRV_ERROR_E hx_drv_spim_init();
  * \retval	HX_DRV_LIB_FAIL		Operation fail
  */
 extern HX_DRV_ERROR_E hx_drv_spim_send(uint32_t addr, uint32_t size, HX_DRV_SPI_TYPE data_type);
+
+/**
+ * \brief	SPI master and I2C master share the same output pin, we need to switch to needed output mode.
+ *          Default output mode is SHARE_MODE_SPIM
+ *
+ * \param[in] mode				select which device to output
+ * \retval	HX_DRV_LIB_PASS		Operation success
+ * \retval	HX_DRV_LIB_FAIL		Operation fail
+ */
+extern HX_DRV_ERROR_E hx_drv_share_switch(HX_DRV_SHARE_MODE mode);
 
 #ifdef __cplusplus
 }
