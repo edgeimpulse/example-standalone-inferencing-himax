@@ -36,7 +36,21 @@ __attribute__((weak)) EI_IMPULSE_ERROR ei_run_impulse_check_canceled() {
  * Cancelable sleep, can be triggered with signal from other thread
  */
 __attribute__((weak)) EI_IMPULSE_ERROR ei_sleep(int32_t time_ms) {
-    ei_printf("Waiting.............................\r\n");
+    uint32_t tick;
+    uint64_t end_delay, cur_time = 0;
+
+    hx_drv_tick_start();
+    hx_drv_tick_get(&tick);
+
+    end_delay = (uint64_t)time_ms + (tick / 400000);
+
+    do {
+        tick = 0;
+        hx_drv_tick_get(&tick);
+        cur_time = (uint64_t)(tick / 400000);
+        
+    }while(cur_time < end_delay);
+    
     return EI_IMPULSE_OK;
 }
 
@@ -44,7 +58,7 @@ uint64_t ei_read_timer_ms()
 {
     uint32_t tick;
     hx_drv_tick_get(&tick);
-    return (uint64_t)tick;
+    return (uint64_t)(tick / 400000);
 }
 
 uint64_t ei_read_timer_us()

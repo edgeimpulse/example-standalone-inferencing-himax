@@ -19,6 +19,7 @@ file(GLOB TF "edge-impulse-sdk/tensorflow/lite/micro/*.cc"
 			"edge-impulse-sdk/tensorflow/lite/c/*.c"
 			"edge-impulse-sdk/tensorflow/lite/kernels/internal/*.cc"
             "edge-impulse-sdk/tensorflow/lite/kernels/*.cc")
+            #"edge-impulse-sdk/tensorflow/lite/micro/kernels/arc_mli/*.cc")
 
 file(GLOB DSP "edge-impulse-sdk/dsp/kissfft/*.cpp"
 			"edge-impulse-sdk/dsp/dct/*.cpp")
@@ -36,6 +37,7 @@ include_directories(edge-impulse-sdk/dsp/dct)
 include_directories(edge-impulse-sdk/third_party/flatbuffers/include/)
 include_directories(edge-impulse-sdk/third_party/gemmlowp)
 include_directories(edge-impulse-sdk/third_party/ruy)
+include_directories(arc_mli_package/include)
 
 # add the executable
 add_executable(${PROJECT_NAME}.elf main.cc ${SOURCE_FILES})
