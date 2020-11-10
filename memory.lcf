@@ -37,7 +37,7 @@ SECTIONS {
 			_e_text = .;
 		}
 		
- 	} > SYSTEM0
+ 	} > ICCM1
 
     
  	GROUP : {

@@ -9,7 +9,8 @@ set(CMAKE_CXX_COMPILER ccac)
 set(CMAKE_CROSSCOMPILING 1)
 
 # add the sources
-file(GLOB EI_SDK "edge-impulse-sdk/porting/himax/*.cpp")
+file(GLOB EI_SDK "edge-impulse-sdk/porting/himax/*.cpp"
+				 "tflite-model/*.cpp")
 
 file(GLOB TF "edge-impulse-sdk/tensorflow/lite/micro/*.cc"
 			"edge-impulse-sdk/tensorflow/lite/micro/memory_planner/*.cc"
