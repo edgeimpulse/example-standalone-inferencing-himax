@@ -19,7 +19,6 @@ limitations under the License.
 #include <cstdint>
 #include <new>
 
-#include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/core/api/error_reporter.h"
 #include "tensorflow/lite/kernels/internal/compatibility.h"
 #include "tensorflow/lite/micro/memory_helpers.h"
@@ -33,8 +32,7 @@ SimpleMemoryAllocator::SimpleMemoryAllocator(ErrorReporter* error_reporter,
       buffer_head_(buffer_head),
       buffer_tail_(buffer_tail),
       head_(buffer_head),
-      tail_(buffer_tail),
-      temp_(buffer_head_) {}
+      tail_(buffer_tail) {}
 
 SimpleMemoryAllocator::SimpleMemoryAllocator(ErrorReporter* error_reporter,
                                              uint8_t* buffer,
@@ -60,72 +58,37 @@ SimpleMemoryAllocator* SimpleMemoryAllocator::Create(
 
 SimpleMemoryAllocator::~SimpleMemoryAllocator() {}
 
-TfLiteStatus SimpleMemoryAllocator::EnsureHeadSize(size_t size,
-                                                   size_t alignment) {
-  if (head_ != temp_) {
-    TF_LITE_REPORT_ERROR(
-        error_reporter_,
-        "Internal error: EnsureHeadSize() needs to be called after"
-        "ResetTempAllocations().");
-    return kTfLiteError;
-  }
-
-  uint8_t* const aligned_result = AlignPointerUp(buffer_head_, alignment);
-  if (aligned_result + size < head_) {
-    // Size is below the current head size, just return.
-    return kTfLiteOk;
-  }
-
+uint8_t* SimpleMemoryAllocator::AllocateFromHead(size_t size,
+                                                 size_t alignment) {
+  uint8_t* const aligned_result = AlignPointerUp(head_, alignment);
   const size_t available_memory = tail_ - aligned_result;
   if (available_memory < size) {
     TF_LITE_REPORT_ERROR(
         error_reporter_,
-        "Failed to adjust head size. Requested: %u, available %u, missing: %u",
+        "Failed to allocate memory. Requested: %u, available %u, missing: %u",
         size, available_memory, size - available_memory);
-    return kTfLiteError;
+    return nullptr;
   }
   head_ = aligned_result + size;
-  temp_ = head_;
-
-  return kTfLiteOk;
+  return aligned_result;
 }
 
 uint8_t* SimpleMemoryAllocator::AllocateFromTail(size_t size,
                                                  size_t alignment) {
   uint8_t* const aligned_result = AlignPointerDown(tail_ - size, alignment);
   if (aligned_result < head_) {
-#ifndef TF_LITE_STRIP_ERROR_STRINGS
     const size_t missing_memory = head_ - aligned_result;
-    TF_LITE_REPORT_ERROR(error_reporter_,
-                         "Failed to allocate tail memory. Requested: %u, "
-                         "available %u, missing: %u",
-                         size, size - missing_memory, missing_memory);
-#endif
+    TF_LITE_REPORT_ERROR(
+        error_reporter_,
+        "Failed to allocate memory. Requested: %u, available %u, missing: %u",
+        size, size - missing_memory, missing_memory);
     return nullptr;
   }
   tail_ = aligned_result;
   return aligned_result;
 }
 
-uint8_t* SimpleMemoryAllocator::AllocateTemp(size_t size, size_t alignment) {
-  uint8_t* const aligned_result = AlignPointerUp(temp_, alignment);
-  const size_t available_memory = tail_ - aligned_result;
-  if (available_memory < size) {
-    TF_LITE_REPORT_ERROR(error_reporter_,
-                         "Failed to allocate temp memory. Requested: %u, "
-                         "available %u, missing: %u",
-                         size, available_memory, size - available_memory);
-    return nullptr;
-  }
-  temp_ = aligned_result + size;
-  return aligned_result;
-}
-
-void SimpleMemoryAllocator::ResetTempAllocations() { temp_ = head_; }
-
 uint8_t* SimpleMemoryAllocator::GetHead() const { return head_; }
-
-uint8_t* SimpleMemoryAllocator::GetBufferHead() const { return buffer_head_; }
 
 uint8_t* SimpleMemoryAllocator::GetTail() const { return tail_; }
 
@@ -137,14 +100,12 @@ size_t SimpleMemoryAllocator::GetTailUsedBytes() const {
   return buffer_tail_ - tail_;
 }
 
-size_t SimpleMemoryAllocator::GetAvailableMemory(size_t alignment) const {
-  uint8_t* const aligned_head = AlignPointerUp(head_, alignment);
-  uint8_t* const aligned_tail = AlignPointerDown(tail_, alignment);
-  return aligned_tail - aligned_head;
+size_t SimpleMemoryAllocator::GetAvailableMemory() const {
+  return tail_ - head_;
 }
 
 size_t SimpleMemoryAllocator::GetUsedBytes() const {
-  return GetBufferSize() - (tail_ - head_);
+  return GetBufferSize() - GetAvailableMemory();
 }
 
 size_t SimpleMemoryAllocator::GetBufferSize() const {

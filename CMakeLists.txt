@@ -98,7 +98,7 @@ edge-impulse-sdk/tensorflow/lite/micro/kernels/arc_mli/scratch_buf_mgr.cc
 edge-impulse-sdk/tensorflow/lite/micro/kernels/split_v.cc)
 
 
-set(SOURCE_FILES ${EI_SDK} ${DSP} ${TF_SOURCE})
+set(SOURCE_FILES ${EI_SDK} ${DSP} ${TF})
 
 # include directories
 include_directories(./)

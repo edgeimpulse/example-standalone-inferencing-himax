@@ -16,7 +16,7 @@ limitations under the License.
 #include "tensorflow/lite/c/builtin_op_data.h"
 #include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/kernels/internal/tensor_ctypes.h"
-#include "tensorflow/lite/micro/kernels/kernel_util.h"
+#include "tensorflow/lite/kernels/kernel_util.h"
 
 namespace tflite {
 namespace ops {
@@ -28,11 +28,9 @@ constexpr int kOutputTensor = 0;
 
 template <typename T>
 TfLiteStatus PackImpl(TfLiteContext* context, TfLiteNode* node,
-                      TfLiteEvalTensor* output, int values_count, int axis) {
-  const TfLiteEvalTensor* input0 =
-      tflite::micro::GetEvalInput(context, node, 0);
-
+                      TfLiteTensor* output, int values_count, int axis) {
   const int dimensions = output->dims->size;
+  const TfLiteTensor* input0 = GetInput(context, node, 0);
   const TfLiteIntArray* input_dims = input0->dims;
   const TfLiteIntArray* output_dims = output->dims;
 
@@ -54,11 +52,11 @@ TfLiteStatus PackImpl(TfLiteContext* context, TfLiteNode* node,
   }
   TFLITE_DCHECK_EQ(input_size, copy_size * outer_size);
 
-  T* output_data = tflite::micro::GetTensorData<T>(output);
+  T* output_data = GetTensorData<T>(output);
 
   for (int i = 0; i < values_count; ++i) {
-    const TfLiteEvalTensor* t = tflite::micro::GetEvalInput(context, node, i);
-    const T* input_data = tflite::micro::GetTensorData<T>(t);
+    const TfLiteTensor* t = GetInput(context, node, i);
+    const T* input_data = GetTensorData<T>(t);
     for (int k = 0; k < outer_size; ++k) {
       const T* input_ptr = input_data + copy_size * k;
       int loc = k * values_count * copy_size + i * copy_size;
@@ -74,8 +72,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   const TfLitePackParams* data =
       reinterpret_cast<TfLitePackParams*>(node->builtin_data);
 
-  TfLiteEvalTensor* output =
-      tflite::micro::GetEvalOutput(context, node, kOutputTensor);
+  TfLiteTensor* output = GetOutput(context, node, kOutputTensor);
 
   switch (output->type) {
     case kTfLiteFloat32: {
@@ -111,15 +108,16 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 }  // namespace
 }  // namespace pack
 
-TfLiteRegistration Register_PACK() {
-  return {/*init=*/nullptr,
-          /*free=*/nullptr,
-          /*prepare=*/nullptr,
-          /*invoke=*/pack::Eval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+TfLiteRegistration* Register_PACK() {
+  static TfLiteRegistration r = {/*init=*/nullptr,
+                                 /*free=*/nullptr,
+                                 /*prepare=*/nullptr,
+                                 /*invoke=*/pack::Eval,
+                                 /*profiling_string=*/nullptr,
+                                 /*builtin_code=*/0,
+                                 /*custom_name=*/nullptr,
+                                 /*version=*/0};
+  return &r;
 }
 
 }  // namespace micro

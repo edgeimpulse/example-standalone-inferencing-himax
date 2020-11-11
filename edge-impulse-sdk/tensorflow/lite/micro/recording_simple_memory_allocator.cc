@@ -24,8 +24,7 @@ namespace tflite {
 RecordingSimpleMemoryAllocator::RecordingSimpleMemoryAllocator(
     ErrorReporter* error_reporter, uint8_t* buffer_head, size_t buffer_size)
     : SimpleMemoryAllocator(error_reporter, buffer_head, buffer_size),
-      requested_head_bytes_(0),
-      requested_tail_bytes_(0),
+      requested_bytes_(0),
       used_bytes_(0),
       alloc_count_(0) {}
 
@@ -46,7 +45,7 @@ RecordingSimpleMemoryAllocator* RecordingSimpleMemoryAllocator::Create(
 }
 
 size_t RecordingSimpleMemoryAllocator::GetRequestedBytes() const {
-  return requested_head_bytes_ + requested_tail_bytes_;
+  return requested_bytes_;
 }
 
 size_t RecordingSimpleMemoryAllocator::GetUsedBytes() const {
@@ -57,15 +56,16 @@ size_t RecordingSimpleMemoryAllocator::GetAllocatedCount() const {
   return alloc_count_;
 }
 
-TfLiteStatus RecordingSimpleMemoryAllocator::EnsureHeadSize(size_t size,
-                                                            size_t alignment) {
+uint8_t* RecordingSimpleMemoryAllocator::AllocateFromHead(size_t size,
+                                                          size_t alignment) {
   const uint8_t* previous_head = GetHead();
-  TfLiteStatus status = SimpleMemoryAllocator::EnsureHeadSize(size, alignment);
-  if (status == kTfLiteOk) {
+  uint8_t* result = SimpleMemoryAllocator::AllocateFromHead(size, alignment);
+  if (result != nullptr) {
     used_bytes_ += GetHead() - previous_head;
-    requested_head_bytes_ = size;
+    requested_bytes_ += size;
+    alloc_count_++;
   }
-  return status;
+  return result;
 }
 
 uint8_t* RecordingSimpleMemoryAllocator::AllocateFromTail(size_t size,
@@ -74,7 +74,7 @@ uint8_t* RecordingSimpleMemoryAllocator::AllocateFromTail(size_t size,
   uint8_t* result = SimpleMemoryAllocator::AllocateFromTail(size, alignment);
   if (result != nullptr) {
     used_bytes_ += previous_tail - GetTail();
-    requested_tail_bytes_ += size;
+    requested_bytes_ += size;
     alloc_count_++;
   }
   return result;

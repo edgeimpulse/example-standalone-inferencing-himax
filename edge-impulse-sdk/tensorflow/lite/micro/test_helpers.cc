@@ -27,7 +27,6 @@ limitations under the License.
 #include "tensorflow/lite/kernels/internal/compatibility.h"
 #include "tensorflow/lite/kernels/internal/tensor_ctypes.h"
 #include "tensorflow/lite/kernels/kernel_util.h"
-#include "tensorflow/lite/micro/all_ops_resolver.h"
 #include "tensorflow/lite/micro/micro_utils.h"
 #include "tensorflow/lite/schema/schema_generated.h"
 
@@ -557,10 +556,6 @@ const Model* BuildComplexMockModel() {
 }  // namespace
 
 const TfLiteRegistration* SimpleStatefulOp::getRegistration() {
-  return GetMutableRegistration();
-}
-
-TfLiteRegistration* SimpleStatefulOp::GetMutableRegistration() {
   static TfLiteRegistration r;
   r.init = Init;
   r.prepare = Prepare;
@@ -574,7 +569,9 @@ void* SimpleStatefulOp::Init(TfLiteContext* context, const char* buffer,
   TFLITE_DCHECK(context->GetScratchBuffer == nullptr);
   TFLITE_DCHECK(context->RequestScratchBufferInArena == nullptr);
 
-  void* raw = context->AllocatePersistentBuffer(context, sizeof(OpData));
+  void* raw;
+  TFLITE_DCHECK(context->AllocatePersistentBuffer(context, sizeof(OpData),
+                                                  &raw) == kTfLiteOk);
   OpData* data = reinterpret_cast<OpData*>(raw);
   *data = {};
   return raw;
@@ -584,7 +581,7 @@ TfLiteStatus SimpleStatefulOp::Prepare(TfLiteContext* context,
                                        TfLiteNode* node) {
   OpData* data = reinterpret_cast<OpData*>(node->user_data);
 
-  // Make sure that the input is in uint8_t with at least 1 data entry.
+  // Make sure that the input is in uint8 with at least 1 data entry.
   const TfLiteTensor* input = tflite::GetInput(context, node, kInputTensor);
   if (input->type != kTfLiteUInt8) return kTfLiteError;
   if (NumElements(input->dims) == 0) return kTfLiteError;
@@ -593,18 +590,13 @@ TfLiteStatus SimpleStatefulOp::Prepare(TfLiteContext* context,
   TF_LITE_ENSURE_STATUS(context->RequestScratchBufferInArena(
       context, sizeof(uint8_t) * NumElements(input->dims),
       &data->sorting_buffer));
-  // We can interleave scratch / persistent buffer allocation.
-  data->invoke_count = reinterpret_cast<int*>(
-      context->AllocatePersistentBuffer(context, sizeof(int)));
-  *data->invoke_count = 0;
-
   return kTfLiteOk;
 }
 
 TfLiteStatus SimpleStatefulOp::Invoke(TfLiteContext* context,
                                       TfLiteNode* node) {
   OpData* data = reinterpret_cast<OpData*>(node->user_data);
-  *data->invoke_count += 1;
+  data->invoke_count += 1;
 
   const TfLiteTensor* input = GetInput(context, node, kInputTensor);
   const uint8_t* input_data = GetTensorData<uint8_t>(input);
@@ -631,15 +623,11 @@ TfLiteStatus SimpleStatefulOp::Invoke(TfLiteContext* context,
   int32_t* invoke_count_data = GetTensorData<int32_t>(invoke_count);
 
   median_data[0] = sorting_buffer[size / 2];
-  invoke_count_data[0] = *data->invoke_count;
+  invoke_count_data[0] = data->invoke_count;
   return kTfLiteOk;
 }
 
 const TfLiteRegistration* MockCustom::getRegistration() {
-  return GetMutableRegistration();
-}
-
-TfLiteRegistration* MockCustom::GetMutableRegistration() {
   static TfLiteRegistration r;
   r.init = Init;
   r.prepare = Prepare;
@@ -679,13 +667,27 @@ TfLiteStatus MockCustom::Invoke(TfLiteContext* context, TfLiteNode* node) {
 
 bool MockCustom::freed_ = false;
 
-AllOpsResolver GetOpResolver() {
-  AllOpsResolver op_resolver;
-  op_resolver.AddCustom("mock_custom", MockCustom::GetMutableRegistration());
-  op_resolver.AddCustom("simple_stateful_op",
-                        SimpleStatefulOp::GetMutableRegistration());
+const TfLiteRegistration* MockOpResolver::FindOp(BuiltinOperator op) const {
+  return nullptr;
+}
 
-  return op_resolver;
+const TfLiteRegistration* MockOpResolver::FindOp(const char* op) const {
+  if (strcmp(op, "mock_custom") == 0) {
+    return MockCustom::getRegistration();
+  } else if (strcmp(op, "simple_stateful_op") == 0) {
+    return SimpleStatefulOp::getRegistration();
+  } else {
+    return nullptr;
+  }
+}
+
+MicroOpResolver::BuiltinParseFunction MockOpResolver::GetOpDataParser(
+    tflite::BuiltinOperator) const {
+  // TODO(b/149408647): Figure out an alternative so that we do not have any
+  // references to ParseOpData in the micro code and the signature for
+  // MicroOpResolver::BuiltinParseFunction can be changed to be different from
+  // ParseOpData.
+  return ParseOpData;
 }
 
 const Model* GetSimpleMockModel() {
@@ -817,13 +819,11 @@ int TestStrcmp(const char* a, const char* b) {
 
 // Wrapper to forward kernel errors to the interpreter's error reporter.
 void ReportOpError(struct TfLiteContext* context, const char* format, ...) {
-#ifndef TF_LITE_STRIP_ERROR_STRINGS
   ErrorReporter* error_reporter = static_cast<ErrorReporter*>(context->impl_);
   va_list args;
   va_start(args, format);
   TF_LITE_REPORT_ERROR(error_reporter, format, args);
   va_end(args);
-#endif
 }
 
 // Create a TfLiteIntArray from an array of ints.  The first element in the
@@ -932,8 +932,8 @@ TfLiteTensor CreateQuantizedBiasTensor(const float* data, int32_t* quantized,
   TfLiteTensor result = CreateTensor(dims, is_variable);
   result.type = kTfLiteInt32;
   result.data.i32 = const_cast<int32_t*>(quantized);
-  // Quantized int32_t tensors always have a zero point of 0, since the range of
-  // int32_t values is large, and because zero point costs extra cycles during
+  // Quantized int32 tensors always have a zero point of 0, since the range of
+  // int32 values is large, and because zero point costs extra cycles during
   // processing.
   result.params = {bias_scale, 0};
   result.quantization = {kTfLiteAffineQuantization, nullptr};
@@ -941,7 +941,7 @@ TfLiteTensor CreateQuantizedBiasTensor(const float* data, int32_t* quantized,
   return result;
 }
 
-// Quantizes int32_t bias tensor with per-channel weights determined by input
+// Quantizes int32 bias tensor with per-channel weights determined by input
 // scale multiplied by weight scale for each channel.
 TfLiteTensor CreatePerChannelQuantizedBiasTensor(
     const float* input, int32_t* quantized, TfLiteIntArray* dims,
@@ -999,14 +999,6 @@ TfLiteTensor CreateSymmetricPerChannelQuantizedTensor(
   result.quantization = {kTfLiteAffineQuantization, affine_quant};
   result.bytes = ElementCount(*dims) * sizeof(int8_t);
   return result;
-}
-
-size_t GetModelTensorCount(const Model* model) {
-  auto* subgraphs = model->subgraphs();
-  if (subgraphs) {
-    return (*subgraphs)[0]->tensors()->size();
-  }
-  return 0;
 }
 
 }  // namespace testing
