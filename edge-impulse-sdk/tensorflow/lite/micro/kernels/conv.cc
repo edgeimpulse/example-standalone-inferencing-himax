@@ -466,7 +466,7 @@ TfLiteRegistration* Register_CONV_2D() {
 }  // namespace ops
 }  // namespace tflite
 
-#elif EI_CLASSIFIER_TFLITE_ENABLE_ARC == 0
+#elif EI_CLASSIFIER_TFLITE_ENABLE_ARC == 1
 /* Copyright 2019-2020 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
