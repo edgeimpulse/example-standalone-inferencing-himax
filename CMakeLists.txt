@@ -168,7 +168,7 @@ set(CMAKE_CXX_FLAGS "\
 
 set(CMAKE_EXE_LINKER_FLAGS_INIT "${LINKER_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${LINKER_FLAGS} \
--Hheap=8192 \
+-Hheap=16384 \
 -tcf=../arcem9d_wei_r16.tcf \
 -Hnocopyr \
 -m \
@@ -181,7 +181,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${LINKER_FLAGS} \
 
 
 add_custom_target(image DEPENDS ${PROJECT_NAME}.elf)
-add_custom_command(TARGET image USES_TERMINAL 
+add_custom_command(TARGET image USES_TERMINAL
 	COMMAND cp ${PROJECT_NAME}.elf ../image_gen_linux_v3
 	COMMAND cp ${PROJECT_NAME}.map ../image_gen_linux_v3
 	COMMAND ${CMAKE_COMMAND} ARGS -E chdir ../image_gen_linux_v3 image_gen -e ${PROJECT_NAME}.elf -m ${PROJECT_NAME}.map -o out.img

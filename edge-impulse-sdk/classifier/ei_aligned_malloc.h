@@ -51,6 +51,8 @@ typedef uint16_t offset_t;
 */
 void * ei_aligned_malloc(size_t align, size_t size)
 {
+	ei_printf("ei_aligned_malloc %lu\n", size);
+
 	void * ptr = NULL;
 
 	//We want it to be a power of two since align_up operates on powers of two
@@ -78,6 +80,8 @@ void * ei_aligned_malloc(size_t align, size_t size)
 
 		} // else NULL, could not malloc
 	} //else NULL, invalid arguments
+
+	ei_printf("ei_aligned_malloc %lu OK %p\n", size, ptr);
 
 	return ptr;
 }

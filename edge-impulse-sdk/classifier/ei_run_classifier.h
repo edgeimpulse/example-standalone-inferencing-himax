@@ -348,12 +348,16 @@ extern "C" EI_IMPULSE_ERROR run_inference(
             return EI_IMPULSE_TFLITE_ARENA_ALLOC_FAILED;
         }
 #else
+        ei_printf("trained_model_init\n");
         TfLiteStatus init_status = trained_model_init(ei_aligned_malloc);
+        ei_printf("trained_model_init %d\n", init_status);
         if (init_status != kTfLiteOk) {
             ei_printf("Failed to allocate TFLite arena (error code %d)\n", init_status);
             return EI_IMPULSE_TFLITE_ARENA_ALLOC_FAILED;
         }
 #endif
+
+        ei_printf("bla1\n");
         uint64_t ctx_start_ms = ei_read_timer_ms();
 
         static bool tflite_first_run = true;
@@ -391,6 +395,8 @@ extern "C" EI_IMPULSE_ERROR run_inference(
 #endif
 #endif
 
+        ei_printf("bla3\n");
+
 #if (EI_CLASSIFIER_COMPILED != 1)
         // Build an interpreter to run the model with.
         tflite::MicroInterpreter interpreter(
@@ -409,23 +415,34 @@ extern "C" EI_IMPULSE_ERROR run_inference(
         TfLiteTensor* output = interpreter.output(0);
 
 #else
+        ei_printf("bla4\n");
         TfLiteTensor* input = trained_model_input(0);
         TfLiteTensor* output = trained_model_output(0);
 #endif
         // Assert that our quantization parameters match the model
         if (tflite_first_run) {
+            ei_printf("bla5\n");
+
             assert(input->type == EI_CLASSIFIER_TFLITE_INPUT_DATATYPE);
             if (EI_CLASSIFIER_TFLITE_INPUT_QUANTIZED) {
                 assert(input->params.scale == EI_CLASSIFIER_TFLITE_INPUT_SCALE);
                 assert(input->params.zero_point == EI_CLASSIFIER_TFLITE_INPUT_ZEROPOINT);
             }
+
+            ei_printf("bla6\n");
+
             assert(output->type == EI_CLASSIFIER_TFLITE_OUTPUT_DATATYPE);
             if (EI_CLASSIFIER_TFLITE_INPUT_QUANTIZED) {
                 assert(output->params.scale == EI_CLASSIFIER_TFLITE_OUTPUT_SCALE);
                 assert(output->params.zero_point == EI_CLASSIFIER_TFLITE_OUTPUT_ZEROPOINT);
             }
+
+            ei_printf("bla7\n");
+
             tflite_first_run = false;
         }
+
+        ei_printf("bla8\n");
 
         // =====
         // Initialization code done
@@ -442,6 +459,8 @@ extern "C" EI_IMPULSE_ERROR run_inference(
             }
         }
 
+        ei_printf("bla9\n");
+
 #if (EI_CLASSIFIER_COMPILED != 1)
         // Run inference, and report any error
         TfLiteStatus invoke_status = interpreter.Invoke();
@@ -451,7 +470,11 @@ extern "C" EI_IMPULSE_ERROR run_inference(
             return EI_IMPULSE_TFLITE_ERROR;
         }
 #else
+        ei_printf("bla10\n");
+
         trained_model_invoke();
+
+        ei_printf("bla11\n");
 #endif
 
         uint64_t ctx_end_ms = ei_read_timer_ms();
