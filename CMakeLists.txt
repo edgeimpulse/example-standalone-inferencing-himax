@@ -144,7 +144,8 @@ set(CMAKE_C_FLAGS "\
 -ffunction-sections \
 -fdata-sections \
 -tcf_core_config \
--DEIDSP_QUANTIZE_FILTERBANK=0")
+-DEIDSP_QUANTIZE_FILTERBANK=0
+-DSCRATCH_MEM_Z_SIZE=(128*1024)")
 
 set(CMAKE_CXX_FLAGS "\
 -DTF_LITE_STATIC_MEMORY \
@@ -163,7 +164,8 @@ set(CMAKE_CXX_FLAGS "\
 -ffunction-sections \
 -fdata-sections \
 -tcf_core_config \
--DEIDSP_QUANTIZE_FILTERBANK=0")
+-DEIDSP_QUANTIZE_FILTERBANK=0
+-DSCRATCH_MEM_Z_SIZE=(128*1024)")
 
 
 set(CMAKE_EXE_LINKER_FLAGS_INIT "${LINKER_FLAGS}")
