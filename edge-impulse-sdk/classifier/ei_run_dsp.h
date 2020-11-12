@@ -41,6 +41,10 @@ namespace {
 
 using namespace ei;
 
+#if defined(EI_DSP_IMAGE_BUFFER_STATIC_SIZE)
+float ei_dsp_image_buffer[EI_DSP_IMAGE_BUFFER_STATIC_SIZE];
+#endif
+
 __attribute__((unused)) int extract_spectral_analysis_features(signal_t *signal, matrix_t *output_matrix, void *config_ptr, const float frequency) {
     ei_dsp_config_spectral_analysis_t config = *((ei_dsp_config_spectral_analysis_t*)config_ptr);
 
@@ -481,12 +485,22 @@ __attribute__((unused)) int extract_image_features(signal_t *signal, matrix_t *o
 
     size_t output_ix = 0;
 
+#if defined(EI_DSP_IMAGE_BUFFER_STATIC_SIZE)
+    const size_t page_size = EI_DSP_IMAGE_BUFFER_STATIC_SIZE;
+#else
+    const size_t page_size = 1024;
+#endif
+
     // buffered read from the signal
     size_t bytes_left = signal->total_length;
-    for (size_t ix = 0; ix < signal->total_length; ix += 1024) {
-        size_t elements_to_read = bytes_left > 1024 ? 1024 : bytes_left;
+    for (size_t ix = 0; ix < signal->total_length; ix += page_size) {
+        size_t elements_to_read = bytes_left > page_size ? page_size : bytes_left;
 
+#if defined(EI_DSP_IMAGE_BUFFER_STATIC_SIZE)
+        matrix_t input_matrix(elements_to_read, config.axes, ei_dsp_image_buffer);
+#else
         matrix_t input_matrix(elements_to_read, config.axes);
+#endif
         if (!input_matrix.buffer) {
             EIDSP_ERR(EIDSP_OUT_OF_MEM);
         }
@@ -520,6 +534,7 @@ __attribute__((unused)) int extract_image_features(signal_t *signal, matrix_t *o
 }
 
 #if EI_CLASSIFIER_TFLITE_INPUT_QUANTIZED == 1
+
 __attribute__((unused)) int extract_image_features_quantized(signal_t *signal, matrix_i8_t *output_matrix, void *config_ptr, const float frequency) {
     ei_dsp_config_image_t config = *((ei_dsp_config_image_t*)config_ptr);
 
@@ -533,12 +548,22 @@ __attribute__((unused)) int extract_image_features_quantized(signal_t *signal, m
 
     size_t output_ix = 0;
 
+#if defined(EI_DSP_IMAGE_BUFFER_STATIC_SIZE)
+    const size_t page_size = EI_DSP_IMAGE_BUFFER_STATIC_SIZE;
+#else
+    const size_t page_size = 1024;
+#endif
+
     // buffered read from the signal
     size_t bytes_left = signal->total_length;
-    for (size_t ix = 0; ix < signal->total_length; ix += 1024) {
-        size_t elements_to_read = bytes_left > 1024 ? 1024 : bytes_left;
+    for (size_t ix = 0; ix < signal->total_length; ix += page_size) {
+        size_t elements_to_read = bytes_left > page_size ? page_size : bytes_left;
 
+#if defined(EI_DSP_IMAGE_BUFFER_STATIC_SIZE)
+        matrix_t input_matrix(elements_to_read, config.axes, ei_dsp_image_buffer);
+#else
         matrix_t input_matrix(elements_to_read, config.axes);
+#endif
         if (!input_matrix.buffer) {
             EIDSP_ERR(EIDSP_OUT_OF_MEM);
         }
