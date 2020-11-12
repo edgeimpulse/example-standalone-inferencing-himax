@@ -1,3 +1,8 @@
 *.img
-
 /build
+CMakeFiles/
+Makefile
+cmake_install.cmake
+image_gen_linux_v3/*.bin
+image_gen_linux_v3/layout.xml
+image_gen_linux_v3/edge-impulse-standalone-himax.*

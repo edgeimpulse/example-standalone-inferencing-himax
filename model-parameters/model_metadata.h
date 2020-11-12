@@ -22,13 +22,14 @@
 #ifndef _EI_CLASSIFIER_MODEL_METADATA_H_
 #define _EI_CLASSIFIER_MODEL_METADATA_H_
 
+#define EI_CLASSIFIER_NONE                       255
 #define EI_CLASSIFIER_UTENSOR                    1
 #define EI_CLASSIFIER_TFLITE                     2
 #define EI_CLASSIFIER_CUBEAI                     3
 
 #define EI_CLASSIFIER_SENSOR_MICROPHONE          1
 #define EI_CLASSIFIER_SENSOR_ACCELEROMETER       2
-#define EI_CLASSIFIER_SENSOR_MICROPHONE_CONT     3
+#define EI_CLASSIFIER_SENSOR_CAMERA              3
 
 // These must match the enum values in TensorFlow Lite's "TfLiteType"
 #define EI_CLASSIFIER_DATATYPE_FLOAT32           1
@@ -38,29 +39,35 @@
 #define EI_CLASSIFIER_RAW_SAMPLE_COUNT           16000
 #define EI_CLASSIFIER_RAW_SAMPLES_PER_FRAME      1
 #define EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE       (EI_CLASSIFIER_RAW_SAMPLE_COUNT * EI_CLASSIFIER_RAW_SAMPLES_PER_FRAME)
-#define EI_CLASSIFIER_INTERVAL_MS                0.0625
-#define EI_CLASSIFIER_OUT_TENSOR_NAME            "y_pred/Identity:0"
 #define EI_CLASSIFIER_INPUT_WIDTH                0
 #define EI_CLASSIFIER_INPUT_HEIGHT               0
+#define EI_CLASSIFIER_INTERVAL_MS                0.0625
+#define EI_CLASSIFIER_OUT_TENSOR_NAME            "y_pred/Softmax_1:0"
 #define EI_CLASSIFIER_LABEL_COUNT                3
 #define EI_CLASSIFIER_HAS_ANOMALY                0
 #define EI_CLASSIFIER_FREQUENCY                  16000
-#define EI_CLASSIFIER_TFLITE_ARENA_SIZE          13446
-#define EI_CLASSIFIER_TFLITE_INPUT_DATATYPE      EI_CLASSIFIER_DATATYPE_FLOAT32
-#define EI_CLASSIFIER_TFLITE_INPUT_QUANTIZED     0
-#define EI_CLASSIFIER_TFLITE_INPUT_SCALE         0
-#define EI_CLASSIFIER_TFLITE_INPUT_ZEROPOINT     0
-#define EI_CLASSIFIER_TFLITE_OUTPUT_DATATYPE     EI_CLASSIFIER_DATATYPE_FLOAT32
-#define EI_CLASSIFIER_TFLITE_OUTPUT_QUANTIZED    0
-#define EI_CLASSIFIER_TFLITE_OUTPUT_SCALE        0
-#define EI_CLASSIFIER_TFLITE_OUTPUT_ZEROPOINT    0
-#define EI_CLASSIFIER_INFERENCING_ENGINE         EI_CLASSIFIER_TFLITE
-#define EI_CLASSIFIER_SENSOR                     EI_CLASSIFIER_SENSOR_MICROPHONE
-#define EI_CLASSIFIER_HAS_TFLITE_OPS_RESOLVER    0
-#define EI_CLASSIFIER_SLICE_SIZE                 (EI_CLASSIFIER_RAW_SAMPLE_COUNT / EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW)
-#define EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW    2
 
-const char* ei_classifier_inferencing_categories[] = { "no", "noise", "yes" };
+#define EI_CLASSIFIER_TFLITE_ARENA_SIZE          12659
+#define EI_CLASSIFIER_TFLITE_INPUT_DATATYPE      EI_CLASSIFIER_DATATYPE_INT8
+#define EI_CLASSIFIER_TFLITE_INPUT_QUANTIZED     1
+#define EI_CLASSIFIER_TFLITE_INPUT_SCALE         0.04313645511865616
+#define EI_CLASSIFIER_TFLITE_INPUT_ZEROPOINT     7
+#define EI_CLASSIFIER_TFLITE_OUTPUT_DATATYPE     EI_CLASSIFIER_DATATYPE_INT8
+#define EI_CLASSIFIER_TFLITE_OUTPUT_QUANTIZED     1
+#define EI_CLASSIFIER_TFLITE_OUTPUT_SCALE        0.00390625
+#define EI_CLASSIFIER_TFLITE_OUTPUT_ZEROPOINT    -128
+#define EI_CLASSIFIER_INFERENCING_ENGINE         EI_CLASSIFIER_TFLITE
+#define EI_CLASSIFIER_COMPILED                   1
+#define EI_CLASSIFIER_SENSOR                     EI_CLASSIFIER_SENSOR_MICROPHONE
+#define EI_CLASSIFIER_HAS_TFLITE_OPS_RESOLVER    1
+
+#define EI_CLASSIFIER_SENSOR                     EI_CLASSIFIER_SENSOR_MICROPHONE
+#define EI_CLASSIFIER_SLICE_SIZE                 (EI_CLASSIFIER_RAW_SAMPLE_COUNT / EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW)
+#ifndef EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW
+#define EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW    4
+#endif // EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW
+
+const char* ei_classifier_inferencing_categories[] = { "jan", "noise", "other" };
 
 typedef struct {
     int axes;
@@ -95,6 +102,17 @@ typedef struct {
 
 typedef struct {
     int axes;
+    float frame_length;
+    float frame_stride;
+    int num_filters;
+    int fft_length;
+    int low_frequency;
+    int high_frequency;
+    int win_size;
+} ei_dsp_config_mfe_t;
+
+typedef struct {
+    int axes;
     float scale_axes;
 } ei_dsp_config_raw_t;
 
@@ -110,7 +128,7 @@ typedef struct {
     const char * spectral_power_edges;
 } ei_dsp_config_spectral_analysis_t;
 
-ei_dsp_config_mfcc_t ei_dsp_config_3 = {
+ei_dsp_config_mfcc_t ei_dsp_config_19 = {
     1,
     13,
     0.02000f,
