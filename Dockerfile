@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 WORKDIR /app
 
@@ -24,6 +24,8 @@ RUN cd /tmp/metaware && \
 # Clean up
 RUN rm -rf /tmp/metaware && \
     rm /opt/cmake/cmake-3.19.0-rc3-Linux-x86_64.sh
+
+RUN apt install -y libtinfo5
 
 # Add to PATH
 ENV PATH="${PATH}:/root/ARC/MetaWare/arc/bin/"
