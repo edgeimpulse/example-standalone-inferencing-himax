@@ -18,7 +18,7 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.
 */
-// Generated on: 11.11.2020 15:19:15
+// Generated on: 12.11.2020 10:14:33
 
 #ifndef trained_model_GEN_H
 #define trained_model_GEN_H
@@ -34,22 +34,16 @@
 #endif // EI_CLASSIFIER_ALLOCATION
 
 // Sets up the model with init and prepare steps.
-#if EI_CLASSIFIER_ALLOCATION == EI_CLASSIFIER_ALLOCATION_HEAP
 TfLiteStatus trained_model_init( void*(*alloc_fnc)(size_t,size_t) );
-#else
-TfLiteStatus trained_model_init();
-#endif
-
 // Returns the input tensor with the given index.
 TfLiteTensor *trained_model_input(int index);
 // Returns the output tensor with the given index.
 TfLiteTensor *trained_model_output(int index);
 // Runs inference for the model.
 TfLiteStatus trained_model_invoke();
-// Frees memory allocated
-#if EI_CLASSIFIER_ALLOCATION == EI_CLASSIFIER_ALLOCATION_HEAP
+//Frees memory allocated
 TfLiteStatus trained_model_reset( void (*free)(void* ptr) );
-#endif
+
 
 // Returns the number of input tensors.
 inline size_t trained_model_inputs() {

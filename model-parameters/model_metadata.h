@@ -128,14 +128,6 @@ typedef struct {
     const char * spectral_power_edges;
 } ei_dsp_config_spectral_analysis_t;
 
-typedef struct {
-    int axes;
-    float frame_length;
-    float frame_stride;
-    int fft_length;
-    bool show_axes;
-} ei_dsp_config_spectrogram_t;
-
 ei_dsp_config_mfcc_t ei_dsp_config_19 = {
     1,
     13,
