@@ -548,6 +548,10 @@ __attribute__((unused)) int extract_image_features_quantized(signal_t *signal, m
 
     size_t output_ix = 0;
 
+    const int32_t iRedToGray = (int32_t)(0.299f * 65536.0f);
+    const int32_t iGreenToGray = (int32_t)(0.587f * 65536.0f);
+    const int32_t iBlueToGray = (int32_t)(0.114f * 65536.0f);
+
 #if defined(EI_DSP_IMAGE_BUFFER_STATIC_SIZE)
     const size_t page_size = EI_DSP_IMAGE_BUFFER_STATIC_SIZE;
 #else
@@ -573,20 +577,24 @@ __attribute__((unused)) int extract_image_features_quantized(signal_t *signal, m
             uint32_t pixel = static_cast<uint32_t>(input_matrix.buffer[jx]);
 
             // rgb to 0..1
-            float r = static_cast<float>(pixel >> 16 & 0xff) / 255.0f;
-            float g = static_cast<float>(pixel >> 8 & 0xff) / 255.0f;
-            float b = static_cast<float>(pixel & 0xff) / 255.0f;
+            int32_t r = static_cast<int32_t>(pixel >> 16 & 0xff);
+            int32_t g = static_cast<int32_t>(pixel >> 8 & 0xff);
+            int32_t b = static_cast<int32_t>(pixel & 0xff);
 
             if (channel_count == 3) {
-                output_matrix->buffer[output_ix++] = static_cast<int8_t>(round(r / EI_CLASSIFIER_TFLITE_INPUT_SCALE) + EI_CLASSIFIER_TFLITE_INPUT_ZEROPOINT);
-                output_matrix->buffer[output_ix++] = static_cast<int8_t>(round(g / EI_CLASSIFIER_TFLITE_INPUT_SCALE) + EI_CLASSIFIER_TFLITE_INPUT_ZEROPOINT);
-                output_matrix->buffer[output_ix++] = static_cast<int8_t>(round(b / EI_CLASSIFIER_TFLITE_INPUT_SCALE) + EI_CLASSIFIER_TFLITE_INPUT_ZEROPOINT);
+                output_matrix->buffer[output_ix++] = static_cast<int8_t>(r + EI_CLASSIFIER_TFLITE_INPUT_ZEROPOINT);
+                output_matrix->buffer[output_ix++] = static_cast<int8_t>(g + EI_CLASSIFIER_TFLITE_INPUT_ZEROPOINT);
+                output_matrix->buffer[output_ix++] = static_cast<int8_t>(b + EI_CLASSIFIER_TFLITE_INPUT_ZEROPOINT);
             }
             else {
                 // ITU-R 601-2 luma transform
                 // see: https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image.convert
-                float v = (0.299f * r) + (0.587f * g) + (0.114f * b);
-                output_matrix->buffer[output_ix++] = static_cast<int8_t>(round(v / EI_CLASSIFIER_TFLITE_INPUT_SCALE) + EI_CLASSIFIER_TFLITE_INPUT_ZEROPOINT);
+                int32_t gray = (iRedToGray * r) + (iGreenToGray * g) + (iBlueToGray * b);
+                gray >>= 16; // scale down to int8_t
+                gray += EI_CLASSIFIER_TFLITE_INPUT_ZEROPOINT;
+                if (gray < - 128) gray = -128;
+                else if (gray > 127) gray = 127;
+                output_matrix->buffer[output_ix++] = static_cast<int8_t>(gray);
             }
         }
 

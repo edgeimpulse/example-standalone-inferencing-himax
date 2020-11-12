@@ -18,20 +18,12 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.
 */
-// Generated on: 12.11.2020 10:14:33
+// Generated on: 12.11.2020 14:07:09
 
 #ifndef trained_model_GEN_H
 #define trained_model_GEN_H
 
 #include "edge-impulse-sdk/tensorflow/lite/c/common.h"
-
-#define EI_CLASSIFIER_ALLOCATION_HEAP          1
-#define EI_CLASSIFIER_ALLOCATION_STATIC        2
-#define EI_CLASSIFIER_ALLOCATION_STATIC_HIMAX  3
-
-#ifndef EI_CLASSIFIER_ALLOCATION
-#define EI_CLASSIFIER_ALLOCATION               EI_CLASSIFIER_ALLOCATION_HEAP
-#endif // EI_CLASSIFIER_ALLOCATION
 
 // Sets up the model with init and prepare steps.
 TfLiteStatus trained_model_init( void*(*alloc_fnc)(size_t,size_t) );
