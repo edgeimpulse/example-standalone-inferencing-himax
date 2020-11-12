@@ -39,9 +39,19 @@
 namespace {
 
 constexpr int kTensorArenaSize = 3392;
+
+#if EI_CLASSIFIER_ALLOCATION == EI_CLASSIFIER_ALLOCATION_HEAP
 uint8_t* tensor_arena = NULL;
 static uint8_t* current_location;
 static uint8_t* tensor_boundary;
+#elif EI_CLASSIFIER_ALLOCATION == EI_CLASSIFIER_ALLOCATION_STATIC
+uint8_t tensor_arena[tensor_arena_size] ALIGN(16);
+#elif EI_CLASSIFIER_ALLOCATION == EI_CLASSIFIER_ALLOCATION_STATIC_HIMAX
+#pragma Bss(".tensor_arena")
+uint8_t tensor_arena[tensor_arena_size] ALIGN(16);
+#pragma Bss()
+#endif // EI_CLASSIFIER_ALLOCATION
+
 template <int SZ, class T> struct TfArray {
   int sz; T elem[SZ];
 };
@@ -380,9 +390,11 @@ static void* GetScratchBuffer(struct TfLiteContext* ctx, int buffer_idx) {
 } // namespace
 
   TfLiteStatus trained_model_init( void*(*alloc_fnc)(size_t,size_t) ) {
+#if EI_CLASSIFIER_ALLOCATION == EI_CLASSIFIER_ALLOCATION_HEAP
   tensor_arena = (uint8_t*) alloc_fnc(16, kTensorArenaSize);
   current_location = tensor_arena + kTensorArenaSize;
   tensor_boundary = tensor_arena;
+#endif
   ctx.AllocatePersistentBuffer = &AllocatePersistentBuffer;
   ctx.RequestScratchBufferInArena = &RequestScratchBufferInArena;
   ctx.GetScratchBuffer = &GetScratchBuffer;
@@ -391,9 +403,14 @@ static void* GetScratchBuffer(struct TfLiteContext* ctx, int buffer_idx) {
   for(size_t i = 0; i < 31; ++i) {
     tflTensors[i].type = tensorData[i].type;
     tflTensors[i].is_variable = 0;
+#if EI_CLASSIFIER_ALLOCATION == EI_CLASSIFIER_ALLOCATION_HEAP
     tflTensors[i].allocation_type = tensorData[i].allocation_type;
+#else
+    tflTensors[i].allocation_type = (tensor_arena <= tensorData[i].data && tensorData[i].data < tensor_arena + kTensorArenaSize) ? kTfLiteArenaRw : kTfLiteMmapRo;
+#endif
     tflTensors[i].bytes = tensorData[i].bytes;
     tflTensors[i].dims = tensorData[i].dims;
+#if EI_CLASSIFIER_ALLOCATION == EI_CLASSIFIER_ALLOCATION_HEAP
     if(tflTensors[i].allocation_type == kTfLiteArenaRw){
       uint8_t* start = (uint8_t*) ((uintptr_t)tensorData[i].data + (uintptr_t) tensor_arena);
       uint8_t* end = start + tensorData[i].bytes;
@@ -407,6 +424,9 @@ static void* GetScratchBuffer(struct TfLiteContext* ctx, int buffer_idx) {
     else{
        tflTensors[i].data.data = tensorData[i].data;
     }
+#else
+    tflTensors[i].data.data = tensorData[i].data;
+#endif // EI_CLASSIFIER_ALLOCATION == EI_CLASSIFIER_ALLOCATION_HEAP
     tflTensors[i].quantization = tensorData[i].quantization;
     if (tflTensors[i].quantization.type == kTfLiteAffineQuantization) {
       TfLiteAffineQuantization const* quant = ((TfLiteAffineQuantization const*)(tensorData[i].quantization.params));

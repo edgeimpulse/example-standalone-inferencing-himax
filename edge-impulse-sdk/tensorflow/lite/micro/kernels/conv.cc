@@ -1,7 +1,6 @@
 // Patched by Edge Impulse to include reference, CMSIS-NN and ARC kernels
 #include "../../../../classifier/ei_classifier_config.h"
-#include "edge-impulse-sdk/porting/ei_classifier_porting.h"
-#if 1 == 0
+#if 0 == 1
 /* noop */
 #elif EI_CLASSIFIER_TFLITE_ENABLE_CMSIS_NN == 1
 /* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
@@ -608,12 +607,9 @@ TfLiteStatus CalculateOpData(TfLiteContext* context, TfLiteNode* node,
 
 void* Init(TfLiteContext* context, const char* buffer, size_t length) {
   TFLITE_DCHECK(context->AllocatePersistentBuffer != nullptr);
-  void* data = nullptr;
-  if (context->AllocatePersistentBuffer(context, sizeof(OpData), &data) ==
-      kTfLiteError) {
-    return nullptr;
-  }
-  return data;
+  void *raw;
+  context->AllocatePersistentBuffer(context, sizeof(OpData), &raw);
+  return raw;
 }
 
 TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
@@ -635,13 +631,17 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   int output_height = output->dims->data[1];
 
   // Dynimically allocate per-channel quantization parameters.
+  void* per_channel_output_multiplier;
+  void* per_channel_output_shift;
   const int num_channels = filter->dims->data[kConvQuantizedDimension];
-  TF_LITE_ENSURE_STATUS(context->AllocatePersistentBuffer(
-      context, num_channels * sizeof(int32_t),
-      reinterpret_cast<void**>(&data->per_channel_output_multiplier)));
-  TF_LITE_ENSURE_STATUS(context->AllocatePersistentBuffer(
-      context, num_channels * sizeof(int32_t),
-      reinterpret_cast<void**>(&data->per_channel_output_shift)));
+  context->AllocatePersistentBuffer(context,
+                                    num_channels * sizeof(int32_t),
+                                    &per_channel_output_multiplier);
+  context->AllocatePersistentBuffer(context,
+                                    num_channels * sizeof(int32_t),
+                                    &per_channel_output_shift);
+  data->per_channel_output_multiplier = (int32_t*)per_channel_output_multiplier;
+  data->per_channel_output_shift = (int32_t*)per_channel_output_shift;
 
   // All per-channel quantized tensors need valid zero point and scale arrays.
   if (input->type == kTfLiteInt8) {
