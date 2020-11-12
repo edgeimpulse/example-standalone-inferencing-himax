@@ -144,8 +144,7 @@ set(CMAKE_C_FLAGS "\
 -ffunction-sections \
 -fdata-sections \
 -tcf_core_config \
--DEIDSP_QUANTIZE_FILTERBANK=0
--DSCRATCH_MEM_Z_SIZE=(128*1024)")
+-DEIDSP_QUANTIZE_FILTERBANK=0")
 
 set(CMAKE_CXX_FLAGS "\
 -DTF_LITE_STATIC_MEMORY \
@@ -156,6 +155,7 @@ set(CMAKE_CXX_FLAGS "\
 -DCPU_ARC \
 -Hnosdata \
 -DTF_LITE_STATIC_MEMORY \
+-DSCRATCH_MEM_Z_SIZE=0x10000 \
 -tcf=../arcem9d_wei_r16.tcf \
 -Hnocopyr \
 -Hpurge \
@@ -164,8 +164,7 @@ set(CMAKE_CXX_FLAGS "\
 -ffunction-sections \
 -fdata-sections \
 -tcf_core_config \
--DEIDSP_QUANTIZE_FILTERBANK=0
--DSCRATCH_MEM_Z_SIZE=(128*1024)")
+-DEIDSP_QUANTIZE_FILTERBANK=0")
 
 
 set(CMAKE_EXE_LINKER_FLAGS_INIT "${LINKER_FLAGS}")
