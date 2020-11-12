@@ -310,6 +310,7 @@ static EI_IMPULSE_ERROR inference_tflite_setup(uint64_t *ctx_start_ms, TfLiteTen
     uint8_t** micro_tensor_arena) {
 #if (EI_CLASSIFIER_COMPILED == 1)
     TfLiteStatus init_status = trained_model_init(ei_aligned_malloc);
+    ei_printf("inference_tflite_setup returns %d\n", init_status);
     if (init_status != kTfLiteOk) {
         ei_printf("Failed to allocate TFLite arena (error code %d)\n", init_status);
         return EI_IMPULSE_TFLITE_ARENA_ALLOC_FAILED;
@@ -324,9 +325,13 @@ static EI_IMPULSE_ERROR inference_tflite_setup(uint64_t *ctx_start_ms, TfLiteTen
     *micro_tensor_arena = tensor_arena;
 #endif
 
+    ei_printf("bla1\n");
+
     *ctx_start_ms = ei_read_timer_ms();
 
     static bool tflite_first_run = true;
+
+    ei_printf("bla2\n");
 
 #if (EI_CLASSIFIER_COMPILED != 1)
         static const tflite::Model* model = nullptr;
@@ -362,8 +367,12 @@ static EI_IMPULSE_ERROR inference_tflite_setup(uint64_t *ctx_start_ms, TfLiteTen
 #endif
 
 #if (EI_CLASSIFIER_COMPILED == 1)
+    ei_printf("bla3\n");
+
     *input = trained_model_input(0);
     *output = trained_model_output(0);
+
+    ei_printf("bla4 %p %p\n", input, output);
 #else
     // Build an interpreter to run the model with.
     tflite::MicroInterpreter *interpreter = new tflite::MicroInterpreter(
@@ -386,6 +395,8 @@ static EI_IMPULSE_ERROR inference_tflite_setup(uint64_t *ctx_start_ms, TfLiteTen
 
     // Assert that our quantization parameters match the model
     if (tflite_first_run) {
+        ei_printf("bla5\n");
+
         assert((*input)->type == EI_CLASSIFIER_TFLITE_INPUT_DATATYPE);
         assert((*output)->type == EI_CLASSIFIER_TFLITE_OUTPUT_DATATYPE);
 #if defined(EI_CLASSIFIER_TFLITE_INPUT_QUANTIZED)
@@ -399,6 +410,8 @@ static EI_IMPULSE_ERROR inference_tflite_setup(uint64_t *ctx_start_ms, TfLiteTen
         }
 #endif
         tflite_first_run = false;
+
+        ei_printf("bla6\n");
     }
     return EI_IMPULSE_OK;
 }
@@ -435,6 +448,8 @@ static EI_IMPULSE_ERROR inference_tflite_run(uint64_t ctx_start_ms,
     }
     free(interpreter);
 #endif
+
+    ei_printf("invoke done\n");
 
     uint64_t ctx_end_ms = ei_read_timer_ms();
 
@@ -907,6 +922,8 @@ extern "C" EI_IMPULSE_ERROR run_classifier_image_quantized(
         return verify_res;
     }
 
+    ei_printf("run_classifier_image_quantized\n");
+
 #if (EI_CLASSIFIER_INFERENCING_ENGINE != EI_CLASSIFIER_TFLITE)
     return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
 #else
@@ -921,6 +938,8 @@ extern "C" EI_IMPULSE_ERROR run_classifier_image_quantized(
     tflite::MicroInterpreter* interpreter;
     EI_IMPULSE_ERROR init_res = inference_tflite_setup(&ctx_start_ms, &input, &output, &interpreter, &tensor_arena);
 #endif
+    ei_printf("run_classifier_image_quantized setup %d\n", init_res);
+
     if (init_res != EI_IMPULSE_OK) {
         return init_res;
     }
@@ -931,15 +950,22 @@ extern "C" EI_IMPULSE_ERROR run_classifier_image_quantized(
 
     uint64_t dsp_start_ms = ei_read_timer_ms();
 
+    ei_printf("whu1\n");
+
     // features matrix maps around the input tensor to not allocate any memory
     ei::matrix_i8_t features_matrix(1, EI_CLASSIFIER_NN_INPUT_FRAME_SIZE, input->data.int8);
 
+    ei_printf("whu2\n");
+
     // run DSP process and quantize automatically
     int ret = extract_image_features_quantized(signal, &features_matrix, ei_dsp_blocks[0].config, EI_CLASSIFIER_FREQUENCY);
+    ei_printf("whu3 %d\n", ret);
     if (ret != EIDSP_OK) {
         ei_printf("ERR: Failed to run DSP process (%d)\n", ret);
         return EI_IMPULSE_DSP_ERROR;
     }
+
+    ei_printf("quantized %d\n", ret);
 
     if (ei_run_impulse_check_canceled() == EI_IMPULSE_CANCELED) {
         return EI_IMPULSE_CANCELED;

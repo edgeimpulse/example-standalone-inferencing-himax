@@ -1,5 +1,6 @@
 // Patched by Edge Impulse to include reference, CMSIS-NN and ARC kernels
 #include "../../../../classifier/ei_classifier_config.h"
+#include "edge-impulse-sdk/porting/ei_classifier_porting.h"
 #if 0 == 1
 /* noop */
 #elif EI_CLASSIFIER_TFLITE_ENABLE_CMSIS_NN == 1
@@ -19,7 +20,6 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow/lite/kernels/internal/reference/integer_ops/depthwise_conv.h"
-
 #include "edge-impulse-sdk/CMSIS/NN/Include/arm_nnfunctions.h"
 #include "tensorflow/lite/c/builtin_op_data.h"
 #include "tensorflow/lite/c/common.h"
@@ -665,20 +665,28 @@ TfLiteStatus EvalMliQuantizedPerChannel(
   mli_tensor mli_out = {};
   mli_conv2d_cfg cfg = {};
 
+  ei_printf("EvalMliQuantizedPerChannel1\n");
+
   // reuse space allocated for OpData parameters
   mli_weights.el_params.asym.scale.pi32 =
       (int32_t*)data.per_channel_output_multiplier;
   mli_bias.el_params.asym.scale.pi32 = (int32_t*)data.per_channel_output_shift;
+
+  ei_printf("EvalMliQuantizedPerChannel2\n");
 
   int16_t filter_zero_point = 0;
   int16_t bias_zero_point = 0;
   mli_weights.el_params.asym.zero_point.pi16 = &filter_zero_point;
   mli_bias.el_params.asym.zero_point.pi16 = &bias_zero_point;
 
+  ei_printf("EvalMliQuantizedPerChannel3\n");
+
   ConvertToMliTensor<int8_t>(input, &mli_in);
   ConvertToMliTensorPerChannel<int8_t>(filter, &mli_weights);
   ConvertToMliTensorPerChannel<int32_t>(bias, &mli_bias);
   ConvertToMliTensor<int8_t>(output, &mli_out);
+
+  ei_printf("EvalMliQuantizedPerChannel4\n");
 
   if (params->activation == kTfLiteActRelu) {
     cfg.relu.type = MLI_RELU_GEN;
@@ -704,6 +712,8 @@ TfLiteStatus EvalMliQuantizedPerChannel(
     cfg.padding_bottom = data.padding.height + data.padding.height_offset;
   }
 
+  ei_printf("EvalMliQuantizedPerChannel5\n");
+
   // for height slicing
   const int heightDimension = 1;
   int inSliceHeight = 0;
@@ -711,6 +721,8 @@ TfLiteStatus EvalMliQuantizedPerChannel(
   const int kernelHeight =
       static_cast<int>(mli_weights.shape[KRNL_DW_H_DIM_HWC]);
   const int overlap = kernelHeight - cfg.stride_height;
+
+  ei_printf("EvalMliQuantizedPerChannel6\n");
 
   // for weight slicing (on output channels)
   // HWCN layout for weigths, output channel dimension is the first dimension.
@@ -724,6 +736,8 @@ TfLiteStatus EvalMliQuantizedPerChannel(
   int slice_channels =
       static_cast<int>(mli_weights.shape[weight_out_ch_dimension]);
 
+  ei_printf("EvalMliQuantizedPerChannel7\n");
+
   // Tensors for data in fast (local) memory
   // and config to copy data from external to local memory
   mli_tensor weights_local = mli_weights;
@@ -733,6 +747,8 @@ TfLiteStatus EvalMliQuantizedPerChannel(
                                    // is already filled in the tensor struct.
   mli_mov_cfg_t copy_config;
   mli_mov_cfg_for_copy(&copy_config);
+
+  ei_printf("EvalMliQuantizedPerChannel8\n");
 
   TF_LITE_ENSURE_STATUS(get_arc_scratch_buffer_for_conv_tensors(
       context, &in_local, &weights_local, &bias_local, &out_local));
@@ -744,11 +760,15 @@ TfLiteStatus EvalMliQuantizedPerChannel(
   const bool w_is_local = weights_local.data == mli_weights.data;
   const bool b_is_local = bias_local.data == mli_bias.data;
 
+  ei_printf("EvalMliQuantizedPerChannel9\n");
+
   TF_LITE_ENSURE_STATUS(arc_scratch_buffer_calc_slice_size_io(
       &in_local, &out_local, kernelHeight, cfg.stride_height, cfg.padding_top,
       cfg.padding_bottom, &inSliceHeight, &outSliceHeight));
   TF_LITE_ENSURE_STATUS(arc_scratch_buffer_calc_slice_size_weights(
       &weights_local, &bias_local, weight_out_ch_dimension, &slice_channels));
+
+  ei_printf("EvalMliQuantizedPerChannel10\n");
 
   /* if input channels is not equal to output channels, a channel multiplier
      is used. in this case the slice channels needs to be rounded down to a
@@ -768,12 +788,19 @@ TfLiteStatus EvalMliQuantizedPerChannel(
   mli_tensor* w_ptr = w_is_local ? w_slice.Sub() : &weights_local;
   mli_tensor* b_ptr = b_is_local ? b_slice.Sub() : &bias_local;
 
+  ei_printf("EvalMliQuantizedPerChannel11\n");
+
   void* input_buffer_ptr = NULL;
   uint32_t input_buffer_size = 0;
   int padding_top = cfg.padding_top;
   int padding_bottom = cfg.padding_bottom;
 
+  int li = 0;
+
   while (!w_slice.Done()) {
+    ei_printf("EvalMliQuantizedPerChannel12 %d\n", li);
+    li++;
+
     mli_mov_tensor_sync(w_slice.Sub(), &copy_config, w_ptr);
     mli_mov_tensor_sync(b_slice.Sub(), &copy_config, b_ptr);
 
@@ -802,29 +829,45 @@ TfLiteStatus EvalMliQuantizedPerChannel(
     mli_tensor* in_ptr = in_is_local ? in_slice.Sub() : &in_local;
     mli_tensor* out_ptr = out_is_local ? out_slice.Sub() : &out_local;
 
+    ei_printf("EvalMliQuantizedPerChannel12 %d #2\n", li);
+
+    int lj = 0;
+
     while (!out_slice.Done()) {
+      ei_printf("EvalMliQuantizedPerChannel12 %d %d #1\n", li, lj);
+      lj++;
       TF_LITE_ENSURE(context, !in_slice.Done());
       cfg.padding_top = in_slice.GetPaddingPre();
       cfg.padding_bottom = in_slice.GetPaddingPost();
 
+      ei_printf("EvalMliQuantizedPerChannel12 %d %d #2\n", li, lj);
+
       // if same input copy as previous iteration, skip the copy of input
       if ((in_slice.Sub()->data != input_buffer_ptr) ||
           (mli_hlp_count_elem_num(in_slice.Sub(), 0) != input_buffer_size)) {
+        ei_printf("EvalMliQuantizedPerChannel12 %d %d #3\n", li, lj);
         mli_mov_tensor_sync(in_slice.Sub(), &copy_config, in_ptr);
         input_buffer_ptr = in_slice.Sub()->data;
         input_buffer_size = mli_hlp_count_elem_num(in_slice.Sub(), 0);
       }
+      ei_printf("EvalMliQuantizedPerChannel12 %d %d #4\n", li, lj);
       mli_krn_depthwise_conv2d_hwcn_sa8_sa8_sa32(in_ptr, w_ptr, b_ptr, &cfg,
                                                  out_ptr);
+      ei_printf("EvalMliQuantizedPerChannel12 %d %d #5\n", li, lj);
       mli_mov_tensor_sync(out_ptr, &copy_config, out_slice.Sub());
+      ei_printf("EvalMliQuantizedPerChannel12 %d %d #6\n", li, lj);
 
       in_slice.Next();
       out_slice.Next();
     }
+
+    ei_printf("EvalMliQuantizedPerChannel12 %d #3\n", li);
+
     w_slice.Next();
     b_slice.Next();
     out_ch_slice.Next();
     in_ch_slice.Next();
+    ei_printf("EvalMliQuantizedPerChannel12 %d #4\n", li);
     TF_LITE_ENSURE(context, in_slice.Done());
   }
   return kTfLiteOk;
@@ -905,8 +948,11 @@ void EvalQuantized(TfLiteContext* context, TfLiteNode* node,
 }
 
 TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
+  ei_printf("depthwise_conv Eval ctx=%p node=%p\n", context, node);
   TFLITE_DCHECK(node->user_data != nullptr);
   TFLITE_DCHECK(node->builtin_data != nullptr);
+
+  ei_printf("depthwise_conv Eval #2\n");
 
   auto* params =
       reinterpret_cast<TfLiteDepthwiseConvParams*>(node->builtin_data);
@@ -918,15 +964,20 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   const TfLiteTensor* bias =
       (NumInputs(node) == 3) ? GetInput(context, node, kBiasTensor) : nullptr;
 
+  ei_printf("depthwise_conv Eval #3\n");
+
   switch (input->type) {  // Already know in/out types are same.
     case kTfLiteFloat32:
       EvalFloat(context, node, params, data, input, filter, bias, output);
       break;
     case kTfLiteInt8:
       if (IsMliApplicable(context, input, filter, bias, params)) {
+        ei_printf("depthwise_conv Eval #4\n");
         EvalMliQuantizedPerChannel(context, node, params, data, input, filter,
                                    bias, output);
+        ei_printf("depthwise_conv Eval #4b\n");
       } else {
+        ei_printf("depthwise_conv Eval #5\n");
         EvalQuantizedPerChannel(context, node, params, data, input, filter,
                                 bias, output);
       }

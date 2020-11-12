@@ -41,6 +41,10 @@ namespace {
 
 using namespace ei;
 
+#if defined(EI_DSP_IMAGE_BUFFER_STATIC_SIZE)
+float ei_dsp_image_buffer[EI_DSP_IMAGE_BUFFER_STATIC_SIZE];
+#endif
+
 __attribute__((unused)) int extract_spectral_analysis_features(signal_t *signal, matrix_t *output_matrix, void *config_ptr, const float frequency) {
     ei_dsp_config_spectral_analysis_t config = *((ei_dsp_config_spectral_analysis_t*)config_ptr);
 
@@ -481,12 +485,22 @@ __attribute__((unused)) int extract_image_features(signal_t *signal, matrix_t *o
 
     size_t output_ix = 0;
 
+#if defined(EI_DSP_IMAGE_BUFFER_STATIC_SIZE)
+    const size_t page_size = EI_DSP_IMAGE_BUFFER_STATIC_SIZE;
+#else
+    const size_t page_size = 1024;
+#endif
+
     // buffered read from the signal
     size_t bytes_left = signal->total_length;
-    for (size_t ix = 0; ix < signal->total_length; ix += 1024) {
-        size_t elements_to_read = bytes_left > 1024 ? 1024 : bytes_left;
+    for (size_t ix = 0; ix < signal->total_length; ix += page_size) {
+        size_t elements_to_read = bytes_left > page_size ? page_size : bytes_left;
 
+#if defined(EI_DSP_IMAGE_BUFFER_STATIC_SIZE)
+        matrix_t input_matrix(elements_to_read, config.axes, ei_dsp_image_buffer);
+#else
         matrix_t input_matrix(elements_to_read, config.axes);
+#endif
         if (!input_matrix.buffer) {
             EIDSP_ERR(EIDSP_OUT_OF_MEM);
         }
@@ -520,10 +534,15 @@ __attribute__((unused)) int extract_image_features(signal_t *signal, matrix_t *o
 }
 
 #if EI_CLASSIFIER_TFLITE_INPUT_QUANTIZED == 1
+
 __attribute__((unused)) int extract_image_features_quantized(signal_t *signal, matrix_i8_t *output_matrix, void *config_ptr, const float frequency) {
     ei_dsp_config_image_t config = *((ei_dsp_config_image_t*)config_ptr);
 
+    ei_printf("extract_image_features_quantized\n");
+
     int16_t channel_count = strcmp(config.channels, "Grayscale") == 0 ? 1 : 3;
+
+    ei_printf("extract_image_features_quantized 2\n");
 
     if (output_matrix->rows * output_matrix->cols != static_cast<uint32_t>(EI_CLASSIFIER_INPUT_WIDTH * EI_CLASSIFIER_INPUT_HEIGHT * channel_count)) {
         ei_printf("out_matrix = %hu items\n", output_matrix->rows, output_matrix->cols);
@@ -531,18 +550,32 @@ __attribute__((unused)) int extract_image_features_quantized(signal_t *signal, m
         EIDSP_ERR(EIDSP_MATRIX_SIZE_MISMATCH);
     }
 
+    ei_printf("extract_image_features_quantized 3\n");
+
     size_t output_ix = 0;
+
+#if defined(EI_DSP_IMAGE_BUFFER_STATIC_SIZE)
+    const size_t page_size = EI_DSP_IMAGE_BUFFER_STATIC_SIZE;
+#else
+    const size_t page_size = 1024;
+#endif
 
     // buffered read from the signal
     size_t bytes_left = signal->total_length;
-    for (size_t ix = 0; ix < signal->total_length; ix += 1024) {
-        size_t elements_to_read = bytes_left > 1024 ? 1024 : bytes_left;
+    for (size_t ix = 0; ix < signal->total_length; ix += page_size) {
+        size_t elements_to_read = bytes_left > page_size ? page_size : bytes_left;
 
+#if defined(EI_DSP_IMAGE_BUFFER_STATIC_SIZE)
+        matrix_t input_matrix(elements_to_read, config.axes, ei_dsp_image_buffer);
+#else
         matrix_t input_matrix(elements_to_read, config.axes);
+#endif
+        ei_printf("extract_image_features_quantized 5\n");
         if (!input_matrix.buffer) {
             EIDSP_ERR(EIDSP_OUT_OF_MEM);
         }
         signal->get_data(ix, elements_to_read, input_matrix.buffer);
+        ei_printf("extract_image_features_quantized 6\n");
 
         for (size_t jx = 0; jx < elements_to_read; jx++) {
             uint32_t pixel = static_cast<uint32_t>(input_matrix.buffer[jx]);
