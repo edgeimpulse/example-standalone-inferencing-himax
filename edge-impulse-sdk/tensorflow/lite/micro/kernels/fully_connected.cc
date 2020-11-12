@@ -369,16 +369,12 @@ TfLiteStatus CalculateOpData(TfLiteContext* context,
 }  // namespace
 
 void* Init(TfLiteContext* context, const char* buffer, size_t length) {
-  ei_printf("fully_connected.cc init #1\n");
   TFLITE_DCHECK(context->AllocatePersistentBuffer != nullptr);
-  ei_printf("fully_connected.cc init #2\n");
   void* data = nullptr;
   if (context->AllocatePersistentBuffer(context, sizeof(OpData), &data) ==
       kTfLiteError) {
-    ei_printf("fully_connected.cc init #3\n");
     return nullptr;
   }
-  ei_printf("fully_connected.cc init #4 %p\n", data);
   return data;
 }
 
@@ -648,8 +644,8 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 
 }  // namespace fully_connected
 
-TfLiteRegistration Register_FULLY_CONNECTED() {
-  return {/*init=*/fully_connected::Init,
+TfLiteRegistration* Register_FULLY_CONNECTED() {
+  static TfLiteRegistration r = {/*init=*/fully_connected::Init,
           /*free=*/nullptr,
           /*prepare=*/fully_connected::Prepare,
           /*invoke=*/fully_connected::Eval,
@@ -657,6 +653,7 @@ TfLiteRegistration Register_FULLY_CONNECTED() {
           /*builtin_code=*/0,
           /*custom_name=*/nullptr,
           /*version=*/0};
+  return &r;
 }
 
 }  // namespace micro

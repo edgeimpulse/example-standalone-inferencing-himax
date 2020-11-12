@@ -452,8 +452,6 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 }  // namespace conv
 
 TfLiteRegistration* Register_CONV_2D() {
-ei_printf("CMSIS-NN Register_CONV_2D init=%p prepare=%p eval=%p\n",
-    conv::Init, conv::Prepare, conv::Eval);
   static TfLiteRegistration r = {/*init=*/conv::Init,
                                  /*free=*/nullptr,
                                  /*prepare=*/conv::Prepare,
@@ -609,16 +607,12 @@ TfLiteStatus CalculateOpData(TfLiteContext* context, TfLiteNode* node,
 }
 
 void* Init(TfLiteContext* context, const char* buffer, size_t length) {
-  ei_printf("conv.cc init\n");
   TFLITE_DCHECK(context->AllocatePersistentBuffer != nullptr);
-  ei_printf("conv.cc init #2\n");
   void* data = nullptr;
   if (context->AllocatePersistentBuffer(context, sizeof(OpData), &data) ==
       kTfLiteError) {
-    ei_printf("conv.cc init #3\n");
     return nullptr;
   }
-  ei_printf("conv.cc init #4 %p\n", data);
   return data;
 }
 
@@ -981,10 +975,8 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 
 }  // namespace conv
 
-TfLiteRegistration Register_CONV_2D() {
-  ei_printf("ARC MLI Register_CONV_2D init=%p prepare=%p eval=%p\n",
-    conv::Init, conv::Prepare, conv::Eval);
-  return {/*init=*/conv::Init,
+TfLiteRegistration* Register_CONV_2D() {
+  static TfLiteRegistration r = {/*init=*/conv::Init,
           /*free=*/nullptr,
           /*prepare=*/conv::Prepare,
           /*invoke=*/conv::Eval,
@@ -992,6 +984,7 @@ TfLiteRegistration Register_CONV_2D() {
           /*builtin_code=*/0,
           /*custom_name=*/nullptr,
           /*version=*/0};
+  return &r;
 }
 
 }  // namespace micro
@@ -1293,8 +1286,6 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 }  // namespace conv
 
 TfLiteRegistration* Register_CONV_2D() {
-  ei_printf("Reference kernel Register_CONV_2D init=%p prepare=%p eval=%p\n",
-    conv::Init, conv::Prepare, conv::Eval);
   static TfLiteRegistration r = {/*init=*/conv::Init,
                                  /*free=*/nullptr,
                                  /*prepare=*/conv::Prepare,

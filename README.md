@@ -26,7 +26,7 @@ $ docker build -t himax-build .
 Then run:
 
 ```
-$ mkdir build
+$ mkdir -p build && mkdir -p image_gen_linux_v3
 $ docker run --rm -it -v $PWD:/app himax-build /bin/bash -c "cd build && cmake .."
 $ docker run --rm -it -v $PWD:/app:delegated -e SNPSLMD_LICENSE_FILE=27020@10.0.58.32 himax-build /bin/bash -c "cd build && make image"
 ```

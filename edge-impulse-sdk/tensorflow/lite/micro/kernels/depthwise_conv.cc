@@ -552,16 +552,12 @@ TfLiteStatus CalculateOpData(TfLiteContext* context, TfLiteNode* node,
 }  // namespace
 
 void* Init(TfLiteContext* context, const char* buffer, size_t length) {
-  ei_printf("depthwise_conv.cc init #1\n");
   TFLITE_DCHECK(context->AllocatePersistentBuffer != nullptr);
-  ei_printf("depthwise_conv.cc init #2\n");
   void* data = nullptr;
   if (context->AllocatePersistentBuffer(context, sizeof(OpData), &data) ==
       kTfLiteError) {
-    ei_printf("depthwise_conv.cc init #3\n");
     return nullptr;
   }
-  ei_printf("depthwise_conv.cc init #4 %p\n", data);
   return data;
 }
 
@@ -947,8 +943,8 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 
 }  // namespace depthwise_conv
 
-TfLiteRegistration Register_DEPTHWISE_CONV_2D() {
-  return {/*init=*/depthwise_conv::Init,
+TfLiteRegistration* Register_DEPTHWISE_CONV_2D() {
+  static TfLiteRegistration r = {/*init=*/depthwise_conv::Init,
           /*free=*/nullptr,
           /*prepare=*/depthwise_conv::Prepare,
           /*invoke=*/depthwise_conv::Eval,
@@ -956,6 +952,7 @@ TfLiteRegistration Register_DEPTHWISE_CONV_2D() {
           /*builtin_code=*/0,
           /*custom_name=*/nullptr,
           /*version=*/0};
+  return &r;
 }
 
 }  // namespace micro

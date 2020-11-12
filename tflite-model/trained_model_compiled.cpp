@@ -380,7 +380,6 @@ static void* GetScratchBuffer(struct TfLiteContext* ctx, int buffer_idx) {
 } // namespace
 
   TfLiteStatus trained_model_init( void*(*alloc_fnc)(size_t,size_t) ) {
-    ei_printf("ti1\n");
   tensor_arena = (uint8_t*) alloc_fnc(16, kTensorArenaSize);
   current_location = tensor_arena + kTensorArenaSize;
   tensor_boundary = tensor_arena;
@@ -390,7 +389,6 @@ static void* GetScratchBuffer(struct TfLiteContext* ctx, int buffer_idx) {
   ctx.tensors = tflTensors;
   ctx.tensors_size = 31;
   for(size_t i = 0; i < 31; ++i) {
-    ei_printf("ti2 %u\n", i);
     tflTensors[i].type = tensorData[i].type;
     tflTensors[i].is_variable = 0;
     tflTensors[i].allocation_type = tensorData[i].allocation_type;
@@ -416,6 +414,7 @@ static void* GetScratchBuffer(struct TfLiteContext* ctx, int buffer_idx) {
       tflTensors[i].params.zero_point = quant->zero_point->data[0];
     }
   }
+
   registrations[OP_RESHAPE] = *tflite::ops::micro::Register_RESHAPE();
   registrations[OP_CONV_2D] = *tflite::ops::micro::Register_CONV_2D();
   registrations[OP_ADD] = *tflite::ops::micro::Register_ADD();
@@ -424,7 +423,6 @@ static void* GetScratchBuffer(struct TfLiteContext* ctx, int buffer_idx) {
   registrations[OP_SOFTMAX] = *tflite::ops::micro::Register_SOFTMAX();
 
   for(size_t i = 0; i < 15; ++i) {
-    ei_printf("ti3 %u\n", i);
     tflNodes[i].inputs = nodeData[i].inputs;
     tflNodes[i].outputs = nodeData[i].outputs;
     tflNodes[i].builtin_data = nodeData[i].builtin_data;
@@ -435,7 +433,6 @@ static void* GetScratchBuffer(struct TfLiteContext* ctx, int buffer_idx) {
     }
   }
   for(size_t i = 0; i < 15; ++i) {
-    ei_printf("ti4 %u\n", i);
     if (registrations[nodeData[i].used_op_index].prepare) {
       TfLiteStatus status = registrations[nodeData[i].used_op_index].prepare(&ctx, &tflNodes[i]);
       if (status != kTfLiteOk) {
@@ -461,9 +458,7 @@ TfLiteTensor* trained_model_output(int index) {
 }
 
 TfLiteStatus trained_model_invoke() {
-  ei_printf("trained_model_invoke\n");
   for(size_t i = 0; i < 15; ++i) {
-    ei_printf("trained_model_invoke %lu\n", i);
     TfLiteStatus status = registrations[nodeData[i].used_op_index].invoke(&ctx, &tflNodes[i]);
     if (status != kTfLiteOk) {
       return status;
