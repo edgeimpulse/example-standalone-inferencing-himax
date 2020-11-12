@@ -1,5 +1,6 @@
 // Patched by Edge Impulse to include reference, CMSIS-NN and ARC kernels
 #include "../../../../classifier/ei_classifier_config.h"
+#include "edge-impulse-sdk/porting/ei_classifier_porting.h"
 #if 1 == 0
 /* noop */
 #elif EI_CLASSIFIER_TFLITE_ENABLE_CMSIS_NN == 1
@@ -451,6 +452,8 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 }  // namespace conv
 
 TfLiteRegistration* Register_CONV_2D() {
+ei_printf("CMSIS-NN Register_CONV_2D init=%p prepare=%p eval=%p\n",
+    conv::Init, conv::Prepare, conv::Eval);
   static TfLiteRegistration r = {/*init=*/conv::Init,
                                  /*free=*/nullptr,
                                  /*prepare=*/conv::Prepare,
@@ -606,12 +609,16 @@ TfLiteStatus CalculateOpData(TfLiteContext* context, TfLiteNode* node,
 }
 
 void* Init(TfLiteContext* context, const char* buffer, size_t length) {
+  ei_printf("conv.cc init\n");
   TFLITE_DCHECK(context->AllocatePersistentBuffer != nullptr);
+  ei_printf("conv.cc init #2\n");
   void* data = nullptr;
   if (context->AllocatePersistentBuffer(context, sizeof(OpData), &data) ==
       kTfLiteError) {
+    ei_printf("conv.cc init #3\n");
     return nullptr;
   }
+  ei_printf("conv.cc init #4 %p\n", data);
   return data;
 }
 
@@ -975,6 +982,8 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 }  // namespace conv
 
 TfLiteRegistration Register_CONV_2D() {
+  ei_printf("ARC MLI Register_CONV_2D init=%p prepare=%p eval=%p\n",
+    conv::Init, conv::Prepare, conv::Eval);
   return {/*init=*/conv::Init,
           /*free=*/nullptr,
           /*prepare=*/conv::Prepare,
@@ -1284,6 +1293,8 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 }  // namespace conv
 
 TfLiteRegistration* Register_CONV_2D() {
+  ei_printf("Reference kernel Register_CONV_2D init=%p prepare=%p eval=%p\n",
+    conv::Init, conv::Prepare, conv::Eval);
   static TfLiteRegistration r = {/*init=*/conv::Init,
                                  /*free=*/nullptr,
                                  /*prepare=*/conv::Prepare,

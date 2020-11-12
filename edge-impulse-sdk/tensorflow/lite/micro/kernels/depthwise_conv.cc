@@ -1,5 +1,6 @@
 // Patched by Edge Impulse to include reference, CMSIS-NN and ARC kernels
 #include "../../../../classifier/ei_classifier_config.h"
+#include "edge-impulse-sdk/porting/ei_classifier_porting.h"
 #if 0 == 1
 /* noop */
 #elif EI_CLASSIFIER_TFLITE_ENABLE_CMSIS_NN == 1
@@ -551,12 +552,16 @@ TfLiteStatus CalculateOpData(TfLiteContext* context, TfLiteNode* node,
 }  // namespace
 
 void* Init(TfLiteContext* context, const char* buffer, size_t length) {
+  ei_printf("depthwise_conv.cc init #1\n");
   TFLITE_DCHECK(context->AllocatePersistentBuffer != nullptr);
+  ei_printf("depthwise_conv.cc init #2\n");
   void* data = nullptr;
   if (context->AllocatePersistentBuffer(context, sizeof(OpData), &data) ==
       kTfLiteError) {
+    ei_printf("depthwise_conv.cc init #3\n");
     return nullptr;
   }
+  ei_printf("depthwise_conv.cc init #4 %p\n", data);
   return data;
 }
 
