@@ -44,10 +44,8 @@ Builds and runs an exported impulse on the Himax WE-I Plus development board.
 
 ## Flashing
 
-You'll need to flash the `image_gen_linux_v3/out.img` file to the board using the XMODEM protocol.
+You'll need the Edge Impulse CLI v1.9.2 or higher. Then flash the binary with:
 
-1. Connect to the device on baud rate 115,200.
-1. Bring the device into bootloader mode by resetting (via the button on the device) and pressing a key on your keyboard within 0.3 seconds.
-1. Press `1`.
-1. On MacOS with Serial.app choose **File > Send file** and make sure to set XMODEM as the protocol.
-1. On Linux you can use minicom, see the [instructions from Himax](https://github.com/HimaxWiseEyePlus/bsp_tflu/tree/master/HIMAX_WE1_EVB_user_guide#flash-image-update-at-linux-environment).
+```
+$ himax-flash-tool --firmware-path image_gen_linux_v3/out.img
+```
