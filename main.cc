@@ -40,7 +40,7 @@ int main(void)
 	hx_drv_tick_start();
 
     while (1) {
-        ei_printf("Edge Impulse standalone inferencing HiMax WE1 EVB\n");
+        ei_printf("Edge Impulse standalone inferencing Himax WE-I Plus EVB\n");
 
         if (sizeof(features) / sizeof(float) != EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE) {
             ei_printf("The size of your 'features' array is not correct. Expected %d items, but had %u\n",
