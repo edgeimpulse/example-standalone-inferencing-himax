@@ -36,7 +36,7 @@ int raw_feature_get_data(size_t offset, size_t length, float *out_ptr) {
 
 int main(void)
 {
-	hx_drv_uart_initial();
+    hx_drv_uart_initial(UART_BR_115200);
 	hx_drv_tick_start();
 
     while (1) {
@@ -47,7 +47,7 @@ int main(void)
                 EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE, sizeof(features) / sizeof(float));
             return 1;
         }
-hx_drv_tick_start();
+
         ei_impulse_result_t result = { 0 };
 
         // the features are stored into flash, and we don't want to load everything into RAM at the same time
