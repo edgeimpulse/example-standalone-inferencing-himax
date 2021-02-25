@@ -53,6 +53,10 @@ typedef enum {
     HX_DRV_LED_ON = 1,     /**< LED off operation  */
 } HX_DRV_LED_ONOFF_E;
 
+/**
+ * \enum HX_DRV_SPI_TYPE
+ * \brief Himax driver SPI transfer data type
+ */
 typedef enum {
 	SPI_TYPE_JPG               = 0x01,    /**< transfer data type is JPEG image */
 	SPI_TYPE_RAW               = 0x02,    /**< transfer data type is RAW image  */
@@ -60,11 +64,19 @@ typedef enum {
 	SPI_TYPE_PDM     	 	   = 0x04,    /**< transfer data type is audio PDM data  */
 }HX_DRV_SPI_TYPE;
 
+/**
+ * \enum HX_DRV_SHARE_MODE_E
+ * \brief Himax driver share pin switch
+ */
 typedef enum {
 	SHARE_MODE_SPIM            = 0x01,    /**< switch share pin to spi master mode */
 	SHARE_MODE_I2CM            = 0x02,    /**< switch share pin to i2c master mode */
-}HX_DRV_SHARE_MODE;
+}HX_DRV_SHARE_MODE_E;
 
+/**
+ * \enum HX_DRV_UART_BAUDRATE_E
+ * \brief Himax driver UART baud rate selection
+ */
 typedef enum {
 	UART_BR_9600 = 0,		/**< UART bard rate 9600bps */
 	UART_BR_14400 = 1,		/**< UART bard rate 14400bps */
@@ -76,6 +88,26 @@ typedef enum {
 	UART_BR_460800 = 7,		/**< UART bard rate 460800bps */
 	UART_BR_921600 = 8,		/**< UART bard rate 921600bps */
 }HX_DRV_UART_BAUDRATE_E;
+
+/**
+ * \enum HX_DRV_QWIIC_CCS811_I2C_ADDR_E
+ * \brief Himax driver CCS811 I2C address selection
+ */
+typedef enum {
+    HX_DRV_QWIIC_CCS811_I2C_0X5A = 0,    /**< Select 0x5A */
+    HX_DRV_QWIIC_CCS811_I2C_0X5B = 1,    /**< Select 0x5B */
+} HX_DRV_QWIIC_CCS811_I2C_ADDR_E;
+
+
+/**
+ * \enum HX_DRV_QWIIC_BME280_I2C_ADDR_E
+ * \brief  Himax driver BME280 I2C address selection
+ */
+typedef enum {
+    HX_DRV_QWIIC_BME280_I2C_0X76 = 0,    /**< Select 0x76 */
+    HX_DRV_QWIIC_BME280_I2C_0X77 = 1,    /**< Select 0x77 */
+} HX_DRV_QWIIC_BME280_I2C_ADDR_E;
+
 
 /****************************************************
  * Structure Definition                             *
@@ -132,6 +164,14 @@ extern "C" {
  * \retval	HX_DRV_LIB_PASS		Success
  */
 extern HX_DRV_ERROR_E hx_drv_lib_version(uint32_t *major_ver, uint32_t *minor_ver);
+
+/**
+ * \brief	Check current platfrom ID.
+ *
+ * \param[out] id		return id of current platform
+ * \retval	HX_DRV_LIB_PASS		Success
+ */
+extern HX_DRV_ERROR_E hx_drv_id_get(uint32_t *id);
 
 /**
  * \brief	Image sensor initialization, it try to initial sensor and query one JPEG frame + one RAW frame to target address.
@@ -577,7 +617,113 @@ extern HX_DRV_ERROR_E hx_drv_spim_send(uint32_t addr, uint32_t size, HX_DRV_SPI_
  * \retval	HX_DRV_LIB_PASS		Operation success
  * \retval	HX_DRV_LIB_ERROR	Operation fail
  */
-extern HX_DRV_ERROR_E hx_drv_share_switch(HX_DRV_SHARE_MODE mode);
+extern HX_DRV_ERROR_E hx_drv_share_switch(HX_DRV_SHARE_MODE_E mode);
+
+/**
+ * \brief	QWIIC MS8607 device initialization.
+ *          Remember do 'hx_drv_share_switch(SHARE_MODE_I2CM)' first such that I2C master as the output pin.
+ *
+ * \retval	HX_DRV_LIB_PASS		Initial success
+ * \retval	HX_DRV_LIB_ERROR	Initial fail
+ */
+extern HX_DRV_ERROR_E hx_drv_qwiic_ms8607_initial();
+
+/**
+ * \brief	QWIIC MS8607 device read sensor data.
+ * 			Ex.
+ * 				float p=0,t=0,h=0;
+ * 				hx_drv_share_switch(SHARE_MODE_I2CM);
+ * 				if(hx_drv_qwiic_ms8607_initial()!=HX_DRV_LIB_PASS) {
+ * 					hx_drv_uart_print("hx_drv_ms8607_initial fail ");
+ * 					return ;
+ * 				}
+ *
+ * 				if(hx_drv_qwiic_ms8607_get_data(&t, &p, &h)==HX_DRV_LIB_PASS)
+ * 					hx_drv_uart_print("p:%d mbar, t:%d Celsius, h:%d %%RH\n", (uint32_t)p, (int32_t)t, (uint32_t)h);
+ **
+ *
+ *
+ * \param[out] t_data			temperature data in Celsius degree
+ * \param[out] p_data			pressure data in mbar unit
+ * \param[out] h_data			humidity data in %RH
+ * \retval	HX_DRV_LIB_PASS		Initial success
+ * \retval	HX_DRV_LIB_ERROR	Initial fail
+ */
+extern HX_DRV_ERROR_E hx_drv_qwiic_ms8607_get_data(float* t_data, float* p_data, float* h_data);
+
+/**
+ * \brief	QWIIC CCS811 device initialization.
+ *          Remember do 'hx_drv_share_switch(SHARE_MODE_I2CM)' first such that I2C master as the output pin.
+ * \param[in] i2caddr			CCS811 I2C address selection
+ * \retval	HX_DRV_LIB_PASS		Initial success
+ * \retval	HX_DRV_LIB_ERROR	Initial fail
+ */
+extern HX_DRV_ERROR_E hx_drv_qwiic_ccs811_initial(HX_DRV_QWIIC_CCS811_I2C_ADDR_E i2caddr);
+
+/**
+ * \brief	QWIIC CCS811 device read sensor data.
+ * 			Ex.
+ * 				uint16_t co2=0,tvoc=0;
+ * 				hx_drv_share_switch(SHARE_MODE_I2CM);
+ * 				if(hx_drv_qwiic_ccs811_initial(HX_DRV_QWIIC_CCS811_I2C_0X5B)!=HX_DRV_LIB_PASS) {
+ * 					hx_drv_uart_print("hx_drv_ccs811_initial fail ");
+ * 					return ;
+ * 				}
+ *
+ * 				for (int i = 0; i < 10; i++)
+ *              {
+ *                  board_delay_cycle(1000 * BOARD_SYS_TIMER_MS_CONV);
+ *                  if (hx_drv_qwiic_ccs811_get_data(&co2, &tvoc) == HX_DRV_LIB_PASS)
+ *                  {
+ *                      hx_drv_uart_print("CO2: %u ppm tVOC: %u ppb\n", co2, tvoc);
+ *                  }
+ *                  else
+ *                  {
+ *                      hx_drv_uart_print("Data not ready.\n");
+ *                  }
+ *              }
+ *
+ *
+ *
+ * \param[out] c_data			eC02 data in ppm unit
+ * \param[out] t_data			TVOC data in ppb unit
+ * \retval	HX_DRV_LIB_PASS		Initial success
+ * \retval	HX_DRV_LIB_ERROR	Initial fail
+ */
+extern HX_DRV_ERROR_E hx_drv_qwiic_ccs811_get_data(uint16_t* c_data, uint16_t* t_data);
+
+/**
+ * \brief	QWIIC BME280 device initialization.
+ *          Remember do 'hx_drv_share_switch(SHARE_MODE_I2CM)' first such that I2C master as the output pin.
+ * \param[in] i2caddr			BME280 I2C address selection
+ * \retval	HX_DRV_LIB_PASS		Initial success
+ * \retval	HX_DRV_LIB_ERROR	Initial fail
+ */
+extern HX_DRV_ERROR_E hx_drv_qwiic_bme280_initial(HX_DRV_QWIIC_BME280_I2C_ADDR_E i2caddr);
+
+/**
+ * \brief	QWIIC BME280 device read sensor data.
+ * 			Ex.
+ * 				float t=0,h=0;
+ * 				uint32_t p=0;
+ * 				hx_drv_share_switch(SHARE_MODE_I2CM);
+ * 				if(hx_drv_qwiic_bme280_initial(HX_DRV_QWIIC_BME280_I2C_0X77)!=HX_DRV_LIB_PASS) {
+ * 					hx_drv_uart_print("hx_drv_bme280_initial fail ");
+ * 					return ;
+ * 				}
+ *
+ * 				if(hx_drv_qwiic_bme280_get_data(&t, &p, &h)==HX_DRV_LIB_PASS)
+ * 					hx_drv_uart_print("p:%d Pa, t:%d Celsius, h:%d %%RH\n", (uint32_t)p, (int32_t)t, (uint32_t)h);
+ **
+ *
+ *
+ * \param[out] t_data			temperature data in Celsius degree
+ * \param[out] p_data			pressure data in units of kiloPascals
+ * \param[out] h_data			humidity data in %RH
+ * \retval	HX_DRV_LIB_PASS		Initial success
+ * \retval	HX_DRV_LIB_ERROR	Initial fail
+ */
+extern HX_DRV_ERROR_E hx_drv_qwiic_bme280_get_data(float* t_data, uint32_t* p_data, float* h_data);
 
 #ifdef __cplusplus
 }

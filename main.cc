@@ -37,7 +37,7 @@ int raw_feature_get_data(size_t offset, size_t length, float *out_ptr) {
 int main(void)
 {
     hx_drv_uart_initial(UART_BR_115200);
-	hx_drv_tick_start();
+    hx_drv_tick_start();
 
     while (1) {
         ei_printf("Edge Impulse standalone inferencing Himax WE-I Plus EVB\n");
@@ -86,5 +86,5 @@ int main(void)
         ei_sleep(5000);
     }
 
-	return 0;
+    return 0;
 }
