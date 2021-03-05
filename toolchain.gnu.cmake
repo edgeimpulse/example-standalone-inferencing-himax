@@ -41,8 +41,7 @@ set(CMAKE_C_FLAGS "\
 -DNDEBUG \
 -g \
 -DCPU_ARC \
--ffunction-sections \
--fdata-sections \
+-DEI_PORTING_HIMAX=1 \
 -DEI_C_LINKAGE=1 \
 -DEIDSP_QUANTIZE_FILTERBANK=0 \
 -DEI_CLASSIFIER_ALLOCATION_STATIC_HIMAX \
@@ -58,6 +57,7 @@ set(CMAKE_CXX_FLAGS "\
 -fmessage-length=0 \
 -DSCRATCH_MEM_Z_SIZE=0 \
 -DNDEBUG \
+-DEI_PORTING_HIMAX=1 \
 -DEI_C_LINKAGE=1 \
 -DTF_LITE_STATIC_MEMORY \
 -DTF_LITE_DISABLE_X86_NEON \
@@ -90,9 +90,7 @@ set(CMAKE_CXX_FLAGS "\
 -mbarrel-shifter \
 -mfpu=fpus_all \
 -g \
--DCPU_ARC \
--ffunction-sections \
--fdata-sections")
+-DCPU_ARC")
 
 if(DEFINED DISABLE_WARNINGS)
     add_compile_options(-w)

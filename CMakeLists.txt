@@ -43,7 +43,7 @@ include_directories(edge-impulse-sdk/CMSIS/Core/Include/)
 include_directories(arc_mli_package/include)
 
 # add the executable
-add_executable(${PROJECT_NAME}.elf main.cc ${SOURCE_FILES})
+add_executable(${PROJECT_NAME}.elf main.cc print_all.c ${SOURCE_FILES})
 
 target_link_libraries(${PROJECT_NAME}.elf ${MY_LINKER_FLAGS})
 
