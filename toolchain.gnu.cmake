@@ -21,7 +21,6 @@ set(CMAKE_C_FLAGS "\
 -mfpu=fpus_all \
 -fno-unwind-tables \
 -ffunction-sections \
--fdata-sections \
 -fmessage-length=0 \
 -DREDUCE_CODESIZE \
 -DTF_LITE_STATIC_MEMORY \
@@ -41,6 +40,7 @@ set(CMAKE_C_FLAGS "\
 -DNDEBUG \
 -g \
 -DCPU_ARC \
+-fdata-sections \
 -DEI_PORTING_HIMAX=1 \
 -DEI_C_LINKAGE=1 \
 -DEIDSP_QUANTIZE_FILTERBANK=0 \
