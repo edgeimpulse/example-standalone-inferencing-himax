@@ -14,8 +14,8 @@ RUN mkdir -p /opt/cmake && \
 # Grab toolchain
 RUN mkdir -p /opt/arc_gnu && \
     cd /opt/arc_gnu && \
-    wget https://github.com/foss-for-synopsys-dwc-arc-processors/toolchain/releases/download/arc-2020.09-release/arc_gnu_2020.09_prebuilt_elf32_le_linux_install.tar.gz && \
-    tar xf arc_gnu_2020.09_prebuilt_elf32_le_linux_install.tar.gz
+    wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1LXLsmvS_zW9ak6XbnermdbgOW8wzxf2a' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1LXLsmvS_zW9ak6XbnermdbgOW8wzxf2a" -O arc_gnu_ei_prebuilt_minimal_elf32_le_linux_install.tar.gz && rm -rf /tmp/cookies.txt &&\
+    tar xf arc_gnu_ei_prebuilt_minimal_elf32_le_linux_install.tar.gz
 
 # Add to PATH
-ENV PATH="${PATH}:/opt/arc_gnu/arc_gnu_2020.09_prebuilt_elf32_le_linux_install/bin/"
+ENV PATH="${PATH}:/opt/arc_gnu/arc_gnu_ei_prebuilt_minimal_elf32_le_linux_install/bin/"
