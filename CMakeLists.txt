@@ -13,17 +13,17 @@ file(GLOB EI_SDK "edge-impulse-sdk/porting/himax/*.cpp"
                  "CMSIS/DSP/Source/TransformFunctions/*bit*.c")
 
 file(GLOB TF "edge-impulse-sdk/tensorflow/lite/micro/*.cc"
-            "edge-impulse-sdk/tensorflow/lite/micro/memory_planner/*.cc"
-            "tflite-model/*.cpp"
-            "edge-impulse-sdk/tensorflow/lite/micro/kernels/*.cc"
-            "edge-impulse-sdk/tensorflow/lite/core/api/*.cc"
-            "edge-impulse-sdk/tensorflow/lite/c/*.c"
-            "edge-impulse-sdk/tensorflow/lite/kernels/internal/*.cc"
-            "edge-impulse-sdk/tensorflow/lite/kernels/*.cc")
-            #"edge-impulse-sdk/tensorflow/lite/micro/kernels/arc_mli/*.cc")
+             "edge-impulse-sdk/tensorflow/lite/micro/memory_planner/*.cc"
+             "edge-impulse-sdk/tensorflow/lite/micro/kernels/*.cc"
+             "edge-impulse-sdk/tensorflow/lite/core/api/*.cc"
+             "edge-impulse-sdk/tensorflow/lite/c/*.c"
+             "edge-impulse-sdk/tensorflow/lite/kernels/internal/*.cc"
+             "edge-impulse-sdk/tensorflow/lite/kernels/*.cc"
+             "edge-impulse-sdk/tensorflow/lite/micro/kernels/arc_mli/*.cc"
+             "tflite-model/*.cpp")
 
 file(GLOB DSP "edge-impulse-sdk/dsp/kissfft/*.cpp"
-            "edge-impulse-sdk/dsp/dct/*.cpp")
+              "edge-impulse-sdk/dsp/dct/*.cpp")
 
 set(SOURCE_FILES ${EI_SDK} ${TF} ${DSP})
 

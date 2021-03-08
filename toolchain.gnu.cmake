@@ -104,9 +104,11 @@ set(MY_LINKER_FLAGS "\
 -Wl,--start-group \
 ${CMAKE_SOURCE_DIR}/libcpuarc.a \
 ${CMAKE_SOURCE_DIR}/libbss.a \
+${CMAKE_SOURCE_DIR}/libboard_open_socket.a \
 ${CMAKE_SOURCE_DIR}/libboard_socket.a \
 ${CMAKE_SOURCE_DIR}/liblibcommon.a \
 ${CMAKE_SOURCE_DIR}/liblibaudio.a \
+${CMAKE_SOURCE_DIR}/liblibsecurity.a \
 ${CMAKE_SOURCE_DIR}/liblibsensordp.a \
 ${CMAKE_SOURCE_DIR}/liblibtflm.a \
 -Wl,--end-group")

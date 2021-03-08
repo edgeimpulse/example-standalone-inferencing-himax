@@ -10,8 +10,8 @@ MEMORY {
     ICCM1   : ORIGIN = 0x10000000, LENGTH = 0x00050000
     BOOT    : ORIGIN = 0x20000000, LENGTH = 0x00020800
     SYSTEM0 : ORIGIN = 0x20020800, LENGTH = 0x000E9AF0
-    DCCM    : ORIGIN = 0x80000000, LENGTH = 0x0003E000
     .stack  : ORIGIN = 0x8003E000, LENGTH = 0x00002000
+    DCCM    : ORIGIN = 0x80000000, LENGTH = 0x00040000
     XCCM    : ORIGIN = 0x90000000, LENGTH = 0x00008000
     YCCM    : ORIGIN = 0xa0000000, LENGTH = 0x00008000
 }
@@ -143,14 +143,9 @@ SECTIONS {
         PROVIDE (_e_rodata = .);
     } > readonly
 
-    .tensor_arena :
-    {
-        .  = ALIGN(16);
-        *(.tensor_arena*)
-    } > readonly
 
 
-    .data     :
+    .data	  :
     {
         /* Start of the data section image in ROM.  */
         PROVIDE (__data_image = .);
@@ -234,6 +229,11 @@ SECTIONS {
 
         PROVIDE (_e_bss = .) ;
     }  > DCCM
+
+    .bss           :
+    {
+        *(.bss.tensor_arena*)
+    }  > sdata
 
     .Zdata :
     {
