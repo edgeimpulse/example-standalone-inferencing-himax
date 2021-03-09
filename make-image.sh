@@ -3,15 +3,15 @@ set -e
 
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
-cd $SCRIPTPATH/build
-rm -f ../image_gen_linux_v3/*.elf
-rm -f ../image_gen_linux_v3/*.map
-cp *.elf ../image_gen_linux_v3
-cp *.map ../image_gen_linux_v3
-
-cd $SCRIPTPATH/image_gen_linux_v3
-
-PATH=$PATH:$PWD
+get_build () {
+    cd $1
+    rm -f ../image_gen_linux_v3/*.elf
+    rm -f ../image_gen_linux_v3/*.map
+    cp *.elf ../image_gen_linux_v3
+    cp *.map ../image_gen_linux_v3
+    cd $SCRIPTPATH/image_gen_linux_v3
+    PATH=$PATH:$PWD
+}
 
 if [ "$2" = "--no-esc" ];
 then
@@ -24,10 +24,12 @@ fi
 
 if [ "$1" = "GNU" ];
 then
+    get_build $SCRIPTPATH/build-gnu
     printf $FORMAT"GNU Image Gen Tool"$END_FORMAT
     ./image_gen_gnu -e *.elf -o out.img
 elif [ "$1" = "MW" ];
 then
+    get_build $SCRIPTPATH/build-mw
     printf $FORMAT"Metaware Image Gen Tool"$END_FORMAT
     ./image_gen -e *.elf -m *.map -o out.img
 else

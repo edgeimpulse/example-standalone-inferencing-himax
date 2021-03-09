@@ -1,5 +1,7 @@
 *.img
 /build
+/build-mw
+/build-gnu
 CMakeFiles/
 Makefile
 cmake_install.cmake
