@@ -143,9 +143,13 @@ SECTIONS {
         PROVIDE (_e_rodata = .);
     } > readonly
 
+    .tensor_arena :
+    {
+        .  = ALIGN(16);
+        KEEP(*(.tensor_arena*))
+    } > readonly
 
-
-    .data	  :
+    .data     :
     {
         /* Start of the data section image in ROM.  */
         PROVIDE (__data_image = .);
@@ -229,11 +233,6 @@ SECTIONS {
 
         PROVIDE (_e_bss = .) ;
     }  > DCCM
-
-    .bss           :
-    {
-        *(.bss.tensor_arena*)
-    }  > sdata
 
     .Zdata :
     {
