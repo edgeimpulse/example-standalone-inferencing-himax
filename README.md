@@ -87,7 +87,6 @@ This runs an exported impulse on the Himax WE-I Plus development board. See the 
     $ docker run --rm -it -v $PWD:/app:delegated himax-build-gnu /bin/bash -c "cd build-gnu && make -j && sh ../make-image.sh GNU"
     ```
 
-    Where you'll have to replace 27020@synopsys.edgeimpulse.com with your license server or license file.
 
 ## Flashing the binary
 
