@@ -26,6 +26,7 @@
 #include "edge-impulse-sdk/tensorflow/lite/c/builtin_op_data.h"
 #include "edge-impulse-sdk/tensorflow/lite/c/common.h"
 #include "edge-impulse-sdk/tensorflow/lite/micro/micro_mutable_op_resolver.h"
+#include "edge-impulse-sdk/porting/ei_classifier_porting.h"
 
 #define EI_CLASSIFIER_PRINT_STATE 1
 
@@ -222,7 +223,7 @@ static void * AllocatePersistentBuffer(struct TfLiteContext* ctx,
   if (current_location - bytes < tensor_boundary) {
     // OK, this will look super weird, but.... we have CMSIS-NN buffers which
     // we cannot calculate beforehand easily.
-    ptr = malloc(bytes);
+    ptr = ei_calloc(bytes, 1);
     if (ptr == NULL) {
       printf("ERR: Failed to allocate persistent buffer of size %d\n", (int)bytes);
       return NULL;
@@ -234,6 +235,8 @@ static void * AllocatePersistentBuffer(struct TfLiteContext* ctx,
   current_location -= bytes;
 
   ptr = current_location;
+  memset(ptr, 0, bytes);
+
   return ptr;
 }
 typedef struct {
@@ -286,6 +289,9 @@ TfLiteStatus trained_model_init( void*(*alloc_fnc)(size_t,size_t) ) {
     return kTfLiteError;
   }
 #endif
+
+  memset(tensor_arena, 0, kTensorArenaSize);
+
   tensor_boundary = tensor_arena;
   current_location = tensor_arena + kTensorArenaSize;
   ctx.AllocatePersistentBuffer = &AllocatePersistentBuffer;

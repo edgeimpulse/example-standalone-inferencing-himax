@@ -429,14 +429,14 @@ static EI_IMPULSE_ERROR inference_tflite_setup(uint64_t *ctx_start_ms, TfLiteTen
 #endif
     uint8_t** micro_tensor_arena) {
 #if (EI_CLASSIFIER_COMPILED == 1)
-    TfLiteStatus init_status = trained_model_init(ei_aligned_malloc);
+    TfLiteStatus init_status = trained_model_init(ei_aligned_calloc);
     if (init_status != kTfLiteOk) {
         ei_printf("Failed to allocate TFLite arena (error code %d)\n", init_status);
         return EI_IMPULSE_TFLITE_ARENA_ALLOC_FAILED;
     }
 #else
     // Create an area of memory to use for input, output, and intermediate arrays.
-    uint8_t *tensor_arena = (uint8_t*)ei_aligned_malloc(16, EI_CLASSIFIER_TFLITE_ARENA_SIZE);
+    uint8_t *tensor_arena = (uint8_t*)ei_aligned_calloc(16, EI_CLASSIFIER_TFLITE_ARENA_SIZE);
     if (tensor_arena == NULL) {
         ei_printf("Failed to allocate TFLite arena (%d bytes)\n", EI_CLASSIFIER_TFLITE_ARENA_SIZE);
         return EI_IMPULSE_TFLITE_ARENA_ALLOC_FAILED;
