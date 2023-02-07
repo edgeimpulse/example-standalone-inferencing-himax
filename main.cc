@@ -66,6 +66,14 @@ static tflite::ErrorReporter* error_reporter = &micro_error_reporter;
     resolver.AddMaxPool2D(); \
     resolver.AddPad();
 
+#if defined __GNUC__
+#define ALIGN(X) __attribute__((aligned(X)))
+#elif defined _MSC_VER
+#define ALIGN(X) __declspec(align(X))
+#elif defined __TASKING__
+#define ALIGN(X) __align(X)
+#endif
+
 #endif
 
 #include "edge-impulse-sdk/porting/ei_classifier_porting.h"
@@ -88,14 +96,24 @@ static tflite::ErrorReporter* error_reporter = &micro_error_reporter;
 // just concat the output afterwards
 #define GESTURES_F32           0
 #define GESTURES_I8            0
-#define MOBILENET_32_32_F32    0
+#define MOBILENET_32_32_F32    1
 #define MOBILENET_32_32_I8     0
 #define MOBILENET_96_96_F32    0
 #define MOBILENET_96_96_I8     0
 #define MOBILENET_320_320_F32  0
-#define KEYWORDS_F32           1
-#define KEYWORDS_I8            1
+#define KEYWORDS_F32           0
+#define KEYWORDS_I8            0
 #define MFCC                   0
+
+#if defined(EI_CLASSIFIER_ALLOCATION_STATIC)
+uint8_t tensor_arena[kTensorArenaSize] ALIGN(16);
+#elif defined(EI_CLASSIFIER_ALLOCATION_STATIC_HIMAX)
+#pragma Bss(".tensor_arena")
+uint8_t tensor_arena[EI_CLASSIFIER_TFLITE_ARENA_SIZE] ALIGN(16);
+#pragma Bss()
+#elif defined(EI_CLASSIFIER_ALLOCATION_STATIC_HIMAX_GNU)
+uint8_t tensor_arena[EI_CLASSIFIER_TFLITE_ARENA_SIZE] ALIGN(16) __attribute__((section(".tensor_arena")));
+#endif
 
 #if EI_CLASSIFIER_USE_FULL_TFLITE
 int run_model_tflite_full(const unsigned char *trained_tflite, size_t trained_tflite_len, int iterations, uint64_t *time_us) {
@@ -148,11 +166,6 @@ int run_model_tflite_full(const unsigned char *trained_tflite, size_t trained_tf
 }
 #else // TensorFlow Lite Micro
 int run_model_tflite_full(const unsigned char *trained_tflite, size_t trained_tflite_len, int iterations, uint64_t *time_us) {
-    uint8_t *tensor_arena = (uint8_t*)ei_aligned_calloc(16, EI_CLASSIFIER_TFLITE_ARENA_SIZE);
-    if (tensor_arena == NULL) {
-        ei_printf("Failed to allocate TFLite arena (%d bytes)\n", EI_CLASSIFIER_TFLITE_ARENA_SIZE);
-        return EI_IMPULSE_TFLITE_ARENA_ALLOC_FAILED;
-    }
 
     const tflite::Model* model = tflite::GetModel(trained_tflite);
     if (model->version() != TFLITE_SCHEMA_VERSION) {
@@ -160,7 +173,6 @@ int run_model_tflite_full(const unsigned char *trained_tflite, size_t trained_tf
             "Model provided is schema version %d not equal "
             "to supported version %d.",
             model->version(), TFLITE_SCHEMA_VERSION);
-        ei_aligned_free(tensor_arena);
         return EI_IMPULSE_TFLITE_ERROR;
     }
 
@@ -173,7 +185,6 @@ int run_model_tflite_full(const unsigned char *trained_tflite, size_t trained_tf
     TfLiteStatus allocate_status = interpreter->AllocateTensors();
     if (allocate_status != kTfLiteOk) {
         error_reporter->Report("AllocateTensors() failed");
-        ei_aligned_free(tensor_arena);
         return EI_IMPULSE_TFLITE_ERROR;
     }
 
@@ -183,7 +194,6 @@ int run_model_tflite_full(const unsigned char *trained_tflite, size_t trained_tf
         TfLiteStatus invoke_status = interpreter->Invoke();
         if (invoke_status != kTfLiteOk) {
             error_reporter->Report("Invoke failed (%d)\n", invoke_status);
-            ei_aligned_free(tensor_arena);
             return EI_IMPULSE_TFLITE_ERROR;
         }
     }
@@ -193,7 +203,6 @@ int run_model_tflite_full(const unsigned char *trained_tflite, size_t trained_tf
     *time_us = end_us - start_us;
 
     delete interpreter;
-    ei_aligned_free(tensor_arena);
 
     return 0;
 }
