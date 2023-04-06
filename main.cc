@@ -62,25 +62,31 @@ int main(void)
 
         if (res != 0) return 1;
 
+        // print the predictions
         ei_printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
             result.timing.dsp, result.timing.classification, result.timing.anomaly);
-
-        // print the predictions
-        ei_printf("[");
-        for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-            ei_printf("%f", result.classification[ix].value);
-    #if EI_CLASSIFIER_HAS_ANOMALY == 1
-            ei_printf(", ");
-    #else
-            if (ix != EI_CLASSIFIER_LABEL_COUNT - 1) {
-                ei_printf(", ");
+#if EI_CLASSIFIER_OBJECT_DETECTION == 1
+        bool bb_found = result.bounding_boxes[0].value > 0;
+        for (size_t ix = 0; ix < EI_CLASSIFIER_OBJECT_DETECTION_COUNT; ix++) {
+            auto bb = result.bounding_boxes[ix];
+            if (bb.value == 0) {
+                continue;
             }
-    #endif
+            ei_printf("    %s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
         }
-    #if EI_CLASSIFIER_HAS_ANOMALY == 1
-        ei_printf_float(result.anomaly);
-    #endif
-        ei_printf("]\n");
+        if (!bb_found) {
+            ei_printf("    No objects found\n");
+        }
+#else
+        for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
+            ei_printf("    %s: %.5f\n", result.classification[ix].label,
+                                        result.classification[ix].value);
+        }
+
+#if EI_CLASSIFIER_HAS_ANOMALY == 1
+        ei_printf("    anomaly score: %.3f\n", result.anomaly);
+#endif
+#endif
 
         // And wait 5 seconds
         ei_sleep(5000);
